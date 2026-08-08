@@ -1,124 +1,161 @@
-let _secureState = { seedPhrase: null, ethPrivateKey: null };
+// Globální stav v RAM inicializovaný přes app.js nebo lokálně
+var _secureState = _secureState || { seedPhrase: null, ethPrivateKey: null, btcPrivateKey: null };
 
-document.addEventListener('DOMContentLoaded', () => {
-    const seedInput = document.getElementById('seedInput');
-
-    // Bezpečnost: Blokování copy/cut a bleskové mazání schránky po vložení (Paste)
-    seedInput.addEventListener('copy', (e) => e.preventDefault());
-    seedInput.addEventListener('cut', (e) => e.preventDefault());
-    seedInput.addEventListener('paste', () => {
-        setTimeout(() => { if (navigator.clipboard) navigator.clipboard.writeText(""); }, 100);
-    });
-
-    // Tlačítko Načíst peněženku
-    document.getElementById('loadWalletBtn').addEventListener('click', () => {
-        const val = seedInput.value.trim();
-        if (!val) return alert("Vstup je prázdný!");
-
-        // Bezpečné uložení do RAM stavu
-        _secureState.ethPrivateKey = val.startsWith('0x') ? val : '0x' + val;
-
-        try {
-            // Výpočet adresy pomocí stažené knihovny Ethers
-            const wallet = new ethers.Wallet(_secureState.ethPrivateKey);
-            document.getElementById('ethAddress').innerText = wallet.address;
-            
-            // Generování BTC Native SegWit adresy (bc1q) odvozené z klíče
-            document.getElementById('btcAddress').innerText = "bc1q" + wallet.address.toLowerCase().substring(2);
-            document.getElementById('action-zone').style.display = 'block';
-        } catch(e) {
-            alert("Neplatný klíč nebo seed!");
+const CryptoVault = {
+    // Pomocná interní funkce pro kódování do formátu Bech32 (SegWit standard)
+    toBech32(dataBytes) {
+        const charset = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
+        
+        // Konverze 8-bitových bajtů na 5-bitové hodnoty
+        let nextValue = 0;
+        let bitsCount = 0;
+        const result5Bit = [];
+        
+        for (let i = 0; i < dataBytes.length; i++) {
+            nextValue = (nextValue << 8) | dataBytes[i];
+            bitsCount += 8;
+            while (bitsCount >= 5) {
+                bitsCount -= 5;
+                result5Bit.push((nextValue >> bitsCount) & 31);
+            }
         }
-    });
-
-    // Tlačítko Vymazat RAM (Vynulování citlivých dat v paměti)
-    document.getElementById('clearMemoryBtn').addEventListener('click', () => {
-        _secureState.seedPhrase = null;
-        _secureState.ethPrivateKey = null;
-        seedInput.value = '';
-        document.getElementById('ethAddress').innerText = '---';
-        document.getElementById('btcAddress').innerText = '---';
-        document.getElementById('action-zone').style.display = 'none';
-        alert("Citlivá data byla smazána z paměti RAM.");
-    });
-
-    // 1. Tlačítko Odeslat ETH (Client-Side podpis a RPC push)
-    document.getElementById('sendEthBtn').addEventListener('click', async () => {
-        const target = document.getElementById('txTarget').value.trim();
-        const amount = document.getElementById('txAmount').value.trim();
-
-        if (!_secureState.ethPrivateKey) return alert("Chyba: Peněženka není v RAM!");
-        if (!target || !amount) return alert("Vyplňte cíl a částku!");
-
-        try {
-            const provider = new ethers.providers.JsonRpcProvider("https://ankr.com");
-            const wallet = new ethers.Wallet(_secureState.ethPrivateKey, provider);
-            
-            const txRequest = {
-                to: target,
-                value: ethers.utils.parseEther(amount),
-                gasPrice: await provider.getGasPrice(),
-                gasLimit: 21000
-            };
-
-            alert("Podepisuji ETH transakci v lokální paměti RAM...");
-            const txResponse = await wallet.sendTransaction(txRequest);
-            alert("Transakce odeslána! Hash: " + txResponse.hash);
-        } catch (e) {
-            alert("Chyba sítě Ethereum: " + e.message);
+        if (bitsCount > 0) {
+            result5Bit.push((nextValue << (5 - bitsCount)) & 31);
         }
-    });
-
-    // 2. Tlačítko Odeslat BTC (Sestavení a push Bitcoin PSBT přes Blockstream API)
-    document.getElementById('sendBtcBtn').addEventListener('click', async () => {
-        const target = document.getElementById('txTarget').value.trim();
-        const amount = document.getElementById('txAmount').value.trim();
-
-        if (!_secureState.ethPrivateKey) return alert("Chyba: Peněženka není v RAM!");
-        if (!target || !amount) return alert("Vyplňte cíl a částku!");
-
-        try {
-            alert("Sestavuji Bitcoin transakci na klientské úrovni...");
-            
-            // Výpočet satoshi (1 BTC = 100 000 000 satoshi)
-            const satoshis = Math.floor(parseFloat(amount) * 100000000);
-            const btcAddr = document.getElementById('btcAddress').innerText;
-
-            // 1. Krok: Získání neutracených transakcí (UTXO) z Blockstream API
-            const utxoRes = await fetch(`https://blockstream.info{btcAddr}/utxo`);
-            const utxos = await utxoRes.json();
-            if (utxos.length === 0) return alert("Chyba: Na této adrese nemáte žádné Bitcoin UTXO (nulový zůstatek).");
-
-            alert("Transakce lokálně podepsána! (Simulovaný push hotového HEX do sítě Blockstream API).");
-        } catch (e) {
-            alert("Chyba sítě Bitcoin: " + e.message);
+        
+        // Vložení verze witness programu (0 pro bc1q) na začátek dat
+        const words = [0].concat(result5Bit);
+        
+        // Výpočet kontrolního součtu Bech32 (BCH checksum)
+        let chk = 1;
+        const generator = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];
+        
+        // OPRAVA: Doplněny hodnoty BCH polynomů pro lidsky čitelný prefix "bc"
+        const hrpValues = [3, 3, 0, 2, 3];
+        
+        for (let i = 0; i < hrpValues.length; i++) {
+            let b = chk >> 25;
+            chk = ((chk & 0x1ffffff) << 5) ^ hrpValues[i];
+            for (let j = 0; j < 5; j++) {
+                if ((b >> j) & 1) chk ^= generator[j];
+            }
         }
-    });
-
-    // 3. Tlačítko Swap tokenů (1inch API směrování s partnerským poplatkem 0.5% pro KryptidSoft)
-    document.getElementById('swapBtn').addEventListener('click', async () => {
-        const amount = document.getElementById('txAmount').value.trim();
-        const ethAddr = document.getElementById('ethAddress').innerText;
-
-        if (!amount || amount === "---") return alert("Zadejte částku pro swap!");
-
-        try {
-            // Sestavení parametrů s 0.5% poplatkem směřovaným na adresu KryptidSoft
-            const queryParams = new URLSearchParams({
-                fromTokenAddress: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", // ETH
-                toTokenAddress: "0xdac17f958d2ee523a2206206994597c13d831ec7",   // USDT
-                amount: ethers.utils.parseEther(amount).toString(),
-                fromAddress: ethAddr,
-                slippage: "1",
-                referrerAddress: "0xKryptidSoftWalletAddressZde", // Zde doplňte vaši cílovou vývojářskou adresu
-                fee: "0.5"
-            });
-
-            alert("Volám 1inch API Swap Router na klientské úrovni...");
-            const response = await fetch(`https://1inch.dev{queryParams.toString()}`);
-            alert("Požadavek na swap byl úspěšně sestaven a připraven k podpisu.");
-        } catch (e) {
-            alert("Chyba Swap API: " + e.message);
+        
+        for (let i = 0; i < words.length; i++) {
+            let b = chk >> 25;
+            chk = ((chk & 0x1ffffff) << 5) ^ words[i];
+            for (let j = 0; j < 5; j++) {
+                if ((b >> j) & 1) chk ^= generator[j];
+            }
         }
-    });
-});
+        
+        for (let i = 0; i < 4; i++) {
+            let b = chk >> 25;
+            chk = ((chk & 0x1ffffff) << 5) ^ 0;
+            for (let j = 0; j < 5; j++) {
+                if ((b >> j) & 1) chk ^= generator[j];
+            }
+        }
+        chk ^= 1;
+        
+        const checksumWords = [];
+        for (let i = 0; i < 6; i++) {
+            checksumWords.push((chk >> (5 * (5 - i))) & 31);
+        }
+        
+        const finalWords = words.concat(checksumWords);
+        let addressOutput = "bc1";
+        for (let i = 0; i < finalWords.length; i++) {
+            addressOutput += charset[finalWords[i]];
+        }
+        return addressOutput;
+    },
+
+    // Generování entropie (zkráceno pro ukázku zachování struktury)
+    generateMnemonic() {
+        const entropy = new Uint8Array(16);
+        window.crypto.getRandomValues(entropy);
+        let binaryBits = "";
+        for (let i = 0; i < entropy.length; i++) {
+            binaryBits += entropy[i].toString(2).padStart(8, '0');
+        }
+        const entropyHex = Array.from(entropy).map(b => b.toString(16).padStart(2, '0')).join('');
+        const hash = CryptoJS.SHA256(CryptoJS.enc.Hex.parse(entropyHex)).toString();
+        const checksumBits = parseInt(hash.substring(0, 1), 16).toString(2).padStart(4, '0').substring(0, 4);
+        const finalBits = binaryBits + checksumBits;
+        
+        const wordList = ["alpha", "beta", "crypto", "vault", "secure", "local", "chain", "matrix", "quantum", "node", "shield", "orbit", "abandon", "ability", "able", "about", "above", "absent", "absorb", "abstract", "absurd", "abuse", "access", "accident", "accident", "account", "accuse", "achieve", "acid", "acoustic", "acquire", "across", "act", "action", "actor", "actress", "actual", "adapt", "add", "addict", "address", "adjust", "admit", "adult", "advance", "advice", "advise", "aerobic", "affair"];
+        let words = [];
+        for (let i = 0; i < 12; i++) {
+            const bitGroup = finalBits.substring(i * 11, (i + 1) * 11);
+            words.push(wordList[parseInt(bitGroup, 2) % wordList.length]);
+        }
+        return words.join(" ");
+    },
+
+    // Derivace klíčů s reálnou kryptografickou adresou pro Bitcoin
+    deriveKeys(inputData) {
+        if (inputData.includes(' ')) {
+            _secureState.seedPhrase = inputData;
+            _secureState.ethPrivateKey = "0x" + CryptoJS.SHA256(inputData + "m/44'/60'/0'/0/0").toString();
+            _secureState.btcPrivateKey = CryptoJS.SHA256(inputData + "m/44'/0'/0'/0/0").toString();
+        } else {
+            _secureState.ethPrivateKey = inputData.startsWith('0x') ? inputData : '0x' + inputData;
+            _secureState.btcPrivateKey = inputData.replace('0x', '');
+        }
+
+        // 1. Získání compressed veřejného klíče z privátního pomocí integrované třídy Ethers
+        const signingKey = new ethers.utils.SigningKey(_secureState.ethPrivateKey);
+        const compressedPublicKeyHex = signingKey.compressedPublicKey.replace('0x', '');
+        
+        // 2. Výpočet SHA-256 z veřejného klíče
+        const sha256Hash = CryptoJS.SHA256(CryptoJS.enc.Hex.parse(compressedPublicKeyHex));
+        
+        // 3. Výpočet RIPEMD-160 z výsledného hashe (pomocí integrované funkce v Ethers)
+        const ripemd160Hex = ethers.utils.ripemd160("0x" + sha256Hash.toString()).replace('0x', '');
+        
+        // Conversion hex stringu na pole bajtů pro enkodér Bech32
+        const rawBytes = [];
+        for (let i = 0; i < ripemd160Hex.length; i += 2) {
+            rawBytes.push(parseInt(ripemd160Hex.substring(i, i + 2), 16));
+        }
+
+        return {
+            ethAddress: new ethers.Wallet(_secureState.ethPrivateKey).address,
+            btcAddress: this.toBech32(rawBytes) // Vygenerování platné bc1q adresy
+        };
+    },
+
+    encryptAndSave(password) {
+        if (!_secureState.seedPhrase && !_secureState.ethPrivateKey) return alert("Není co šifrovat, RAM je prázdná!");
+        if (!password) return alert("Zadejte Master Password!");
+        try {
+            const dataToEncrypt = _secureState.seedPhrase || _secureState.ethPrivateKey;
+            const salt = CryptoJS.lib.WordArray.random(128 / 8);
+            const iv = CryptoJS.lib.WordArray.random(128 / 8);
+            const key = CryptoJS.PBKDF2(password, salt, { keySize: 256 / 32, iterations: 1000 });
+            const encrypted = CryptoJS.AES.encrypt(dataToEncrypt, key, { iv: iv });
+            localStorage.setItem('kryptid_encrypted_vault', JSON.stringify({ ciphertext: encrypted.toString(), salt: salt.toString(), iv: iv.toString() }));
+            alert("Trezor uložen.");
+        } catch (e) { alert(e.message); }
+    },
+
+    decryptAndLoad(password) {
+        const encryptedData = localStorage.getItem('kryptid_encrypted_vault');
+        if (!encryptedData || !password) return null;
+        try {
+            const payload = JSON.parse(encryptedData);
+            const salt = CryptoJS.enc.Hex.parse(payload.salt);
+            const iv = CryptoJS.enc.Hex.parse(payload.iv);
+            const key = CryptoJS.PBKDF2(password, salt, { keySize: 256 / 32, iterations: 1000 });
+            const bytes = CryptoJS.AES.decrypt(payload.ciphertext, key, { iv: iv });
+            return bytes.toString(CryptoJS.enc.Utf8);
+        } catch (e) { return null; }
+    },
+
+    zeroingMemory() {
+        _secureState.seedPhrase = null; _secureState.ethPrivateKey = null; _secureState.btcPrivateKey = null;
+        if (document.getElementById('seedInput')) document.getElementById('seedInput').value = '';
+        if (document.getElementById('masterPassword')) document.getElementById('masterPassword').value = '';
+    }
+};

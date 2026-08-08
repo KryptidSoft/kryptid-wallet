@@ -1,59 +1,59 @@
 <!DOCTYPE html>
-<html lang="cs">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.ankr.com https://api.1inch.dev https://blockstream.info https://blockchain.info;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.ankr.com https://rpc.ankr.com https://api.1inch.dev https://blockstream.info https://blockchain.info;">
     <title>Kryptid Wallet</title>
 </head>
 <body>
 
-    <h1>Kryptid Wallet (Multi-Chain)</h1>
+    <h1>Kryptid Wallet (Multi-Chain Edition)</h1>
     
-    <!-- Zóna 1: Inicializace a Trezor -->
+    <!-- Zone 1: Initialization and Vault -->
     <div>
-        <h3>Správa klíčů</h3>
-        <label for="seedInput">Zadejte 12 slov nebo Privátní klíč (Hex):</label><br>
+        <h3>Key Management</h3>
+        <label for="seedInput">Enter 12 words or Private Key (Hex):</label><br>
         <input type="password" id="seedInput" autocomplete="off" autocorrect="off" spellcheck="false"><br><br>
         
-        <label for="masterPassword">Master Password (pro šifrování úložiště):</label><br>
+        <label for="masterPassword">Master Password (for vault encryption):</label><br>
         <input type="password" id="masterPassword" autocomplete="off" autocorrect="off" spellcheck="false"><br><br>
         
-        <button id="generateBtn">Generovat nový BIP-39 Seed</button>
-        <button id="loadWalletBtn">Načíst z RAM</button>
-        <button id="saveVaultBtn">Zašifrovat a uložit do PC</button>
-        <button id="loadVaultBtn">Dešifrovat z PC</button>
-        <button id="clearMemoryBtn" style="color:red;">Vymazat RAM a odhlásit</button>
+        <button id="generateBtn">Generate New BIP-39 Seed</button>
+        <button id="loadWalletBtn">Load from RAM</button>
+        <button id="saveVaultBtn">Encrypt and Save to Storage</button>
+        <button id="loadVaultBtn">Decrypt from Storage</button>
+        <button id="clearMemoryBtn" style="color:red;">Wipe RAM and Logout</button>
     </div>
 
     <hr>
 
-    <!-- Zóna 2: Zobrazení adres -->
+    <!-- Zone 2: Addresses Display -->
     <div>
-        <h3>Vaše adresy</h3>
+        <h3>Your Addresses</h3>
         <p>Ethereum (m/44'/60'/0'/0/0): <span id="ethAddress">---</span></p>
         <p>Bitcoin SegWit (m/44'/0'/0'/0/0): <span id="btcAddress">---</span></p>
     </div>
 
     <hr>
 
-    <!-- Zóna 3: Transakce a Swap -->
+    <!-- Zone 3: Transactions and Swap -->
     <div id="action-zone" style="display:none;">
-        <h3>Odeslat transakci / Klientský Swap</h3>
-        <label for="txTarget">Cílová adresa:</label><br>
-        <input type="text" id="txTarget" placeholder="0x... nebo bc1..."><br>
-        <label for="txAmount">Částka:</label><br>
+        <h3>Send Transaction / Client Swap</h3>
+        <label for="txTarget">Destination Address:</label><br>
+        <input type="text" id="txTarget" placeholder="0x... or bc1..."><br>
+        <label for="txAmount">Amount:</label><br>
         <input type="number" id="txAmount" step="any" placeholder="0.00"><br><br>
         
-        <button id="sendEthBtn">Odeslat ETH (Ankr RPC)</button>
-        <button id="sendBtcBtn">Odeslat BTC (PSBT Blockstream)</button>
-        <button id="swapBtn">Swap tokenů (1inch Router - 0.5% fee)</button>
+        <button id="sendEthBtn">Send ETH (Ankr RPC)</button>
+        <button id="sendBtcBtn">Send BTC (PSBT Blockstream)</button>
+        <button id="swapBtn">Swap Tokens (1inch Router - 0.5% fee)</button>
     </div>
 
-    <!-- Načtení vendor knihoven stažených přes PowerShell -->
+    <!-- Loading vendor libraries downloaded via PowerShell -->
     <script src="js/vendor/crypto-js.min.js"></script>
     <script src="js/vendor/ethers.umd.min.js"></script>
     
-    <!-- Architektonické vrstvy aplikace -->
+    <!-- Application architectural layers -->
     <script src="js/security.js"></script>
     <script src="js/crypto-vault.js"></script>
     <script src="js/blockchain.js"></script>

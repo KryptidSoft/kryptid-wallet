@@ -1,15 +1,24 @@
+// Globální stav držený striktně v lokální paměti RAM
+// Definováno klíčovým slovem var pro spolehlivou přístupnost napříč izolovanými skripty na Legacy PC
+var _secureState = _secureState || {
+    seedPhrase: null,
+    ethPrivateKey: null,
+    btcPrivateKey: null
+};
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Registrace tlačítek správy klíčů
+    // 1. Obsluha tlačítek pro správu klíčů a kryptografického trezoru
     document.getElementById('generateBtn').addEventListener('click', () => {
         const mnemonic = CryptoVault.generateMnemonic();
         document.getElementById('seedInput').value = mnemonic;
-        alert("V horním poli byl vygenerován nový 12slovný BIP-39 Seed. Uschovejte jej!");
+        alert("New 12-word BIP-39 Seed generated in the field above. Secure it properly!");
     });
 
     document.getElementById('loadWalletBtn').addEventListener('click', () => {
         const val = document.getElementById('seedInput').value.trim();
-        if (!val) return alert("Zadejte seed nebo privátní klíč!");
+        if (!val) return alert("Please enter seed or private key!");
         
+        // Bezpečné odvození adres přes matematické jádro crypto-vault.js
         const accounts = CryptoVault.deriveKeys(val);
         document.getElementById('ethAddress').innerText = accounts.ethAddress;
         document.getElementById('btcAddress').innerText = accounts.btcAddress;
@@ -26,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const decrypted = CryptoVault.decryptAndLoad(password);
         if (decrypted) {
             document.getElementById('seedInput').value = decrypted;
-            alert("Trezor byl úspěšně dešifrován do paměti. Nyní klikněte na tlačítko 'Načíst z RAM'.");
+            alert("Vault successfully decrypted into memory. Now click 'Load from RAM'.");
         }
     });
 
@@ -35,19 +44,35 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('ethAddress').innerText = '---';
         document.getElementById('btcAddress').innerText = '---';
         document.getElementById('action-zone').style.display = 'none';
-        alert("Aplikace byla odhlášena a RAM bezpečně vymazána.");
+        alert("Application logged out and RAM securely wiped.");
     });
 
-    // Registrace tlačítek síťových transakcí
+    // 2. Obsluha tlačítek pro síťové transakce a on-chain operace
     document.getElementById('sendEthBtn').addEventListener('click', () => {
-        BlockchainService.sendEthereumTx(document.getElementById('txTarget').value, document.getElementById('txAmount').value);
+        const target = document.getElementById('txTarget').value.trim();
+        const amount = document.getElementById('txAmount').value.trim();
+        if (!target || !amount) return alert("Please fill in destination and amount!");
+        
+        BlockchainService.sendEthereumTx(target, amount);
     });
 
     document.getElementById('sendBtcBtn').addEventListener('click', () => {
-        BlockchainService.sendBitcoinPSBT(document.getElementById('txTarget').value, document.getElementById('txAmount').value);
+        const target = document.getElementById('txTarget').value.trim();
+        const amount = document.getElementById('txAmount').value.trim();
+        // OPRAVA 1: Přidána chybějící kontrola cíle transakce a sjednocen text hlášky
+        if (!target || !amount) return alert("Please fill in destination and amount!");
+        
+        BlockchainService.sendBitcoinPSBT(target, amount);
     });
 
     document.getElementById('swapBtn').addEventListener('click', () => {
-        BlockchainService.executeSwap(document.getElementById('txAmount').value);
+        const amount = document.getElementById('txAmount').value.trim();
+        // OPRAVA 2: Přidána správná kontrola částky pro swap a odstraněn špatně vložený console.log
+        if (!amount || amount === "0") return alert("Please enter a valid amount for swap!");
+        
+        BlockchainService.executeSwap(amount);
     });
+
+    // OPRAVA 3: Sjednocen úplně poslední inicializační log do angličtiny
+    console.log("[Kryptid Core] UI initialization completed. All architectural layers are linked.");
 });

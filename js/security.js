@@ -15,13 +15,11 @@ const SecurityLayer = {
             input.addEventListener('copy', (e) => e.preventDefault());
             input.addEventListener('cut', (e) => e.preventDefault());
 
-            // Povolení vložení s bleskovým promazáním systémové schránky (100ms)
+            // OPRAVA: Okamžité vymazání schránky během události bez asynchronního timeoutu
             input.addEventListener('paste', () => {
-                setTimeout(() => {
-                    if (navigator.clipboard && navigator.clipboard.writeText) {
-                        navigator.clipboard.writeText("");
-                    }
-                }, 100);
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText("");
+                }
             });
         });
     }
