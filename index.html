@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.ankr.com https://1inch.dev https://blockstream.info https://blockchain.info;">
+    <title>Kryptid Wallet</title>
+</head>
+<body>
+    <h1>Kryptid Wallet (Multi-Chain)</h1>
+    <div>
+        <label for="seedInput">Seed / Privátní klíč:</label>
+        <input type="password" id="seedInput" autocomplete="off" autocorrect="off" spellcheck="false">
+        <button id="loadWalletBtn">Načíst</button>
+        <button id="clearMemoryBtn" style="color:red;">Smazat RAM</button>
+    </div>
+    <div>
+        <p>ETH Adresa: <span id="ethAddress">---</span></p>
+        <p>BTC Adresa: <span id="btcAddress">---</span></p>
+    </div>
+    <div id="action-zone" style="display:none;">
+        <hr>
+        <input type="text" id="txTarget" placeholder="Adresa kam">
+        <input type="number" id="txAmount" placeholder="Částka">
+        <button id="sendEthBtn">Odeslat ETH</button>
+        <button id="sendBtcBtn">Odeslat BTC (PSBT)</button>
+        <button id="swapBtn">Swap (0.5% fee)</button>
+    </div>
+    <script src="js/vendor/crypto-js.min.js"></script>
+    <script src="js/vendor/ethers.umd.min.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
