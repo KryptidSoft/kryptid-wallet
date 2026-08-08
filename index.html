@@ -2,31 +2,61 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.ankr.com https://1inch.dev https://blockstream.info https://blockchain.info;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.ankr.com https://api.1inch.dev https://blockstream.info https://blockchain.info;">
     <title>Kryptid Wallet</title>
 </head>
 <body>
+
     <h1>Kryptid Wallet (Multi-Chain)</h1>
+    
+    <!-- Zóna 1: Inicializace a Trezor -->
     <div>
-        <label for="seedInput">Seed / Privátní klíč:</label>
-        <input type="password" id="seedInput" autocomplete="off" autocorrect="off" spellcheck="false">
-        <button id="loadWalletBtn">Načíst</button>
-        <button id="clearMemoryBtn" style="color:red;">Smazat RAM</button>
+        <h3>Správa klíčů</h3>
+        <label for="seedInput">Zadejte 12 slov nebo Privátní klíč (Hex):</label><br>
+        <input type="password" id="seedInput" autocomplete="off" autocorrect="off" spellcheck="false"><br><br>
+        
+        <label for="masterPassword">Master Password (pro šifrování úložiště):</label><br>
+        <input type="password" id="masterPassword" autocomplete="off" autocorrect="off" spellcheck="false"><br><br>
+        
+        <button id="generateBtn">Generovat nový BIP-39 Seed</button>
+        <button id="loadWalletBtn">Načíst z RAM</button>
+        <button id="saveVaultBtn">Zašifrovat a uložit do PC</button>
+        <button id="loadVaultBtn">Dešifrovat z PC</button>
+        <button id="clearMemoryBtn" style="color:red;">Vymazat RAM a odhlásit</button>
     </div>
+
+    <hr>
+
+    <!-- Zóna 2: Zobrazení adres -->
     <div>
-        <p>ETH Adresa: <span id="ethAddress">---</span></p>
-        <p>BTC Adresa: <span id="btcAddress">---</span></p>
+        <h3>Vaše adresy</h3>
+        <p>Ethereum (m/44'/60'/0'/0/0): <span id="ethAddress">---</span></p>
+        <p>Bitcoin SegWit (m/44'/0'/0'/0/0): <span id="btcAddress">---</span></p>
     </div>
+
+    <hr>
+
+    <!-- Zóna 3: Transakce a Swap -->
     <div id="action-zone" style="display:none;">
-        <hr>
-        <input type="text" id="txTarget" placeholder="Adresa kam">
-        <input type="number" id="txAmount" placeholder="Částka">
-        <button id="sendEthBtn">Odeslat ETH</button>
-        <button id="sendBtcBtn">Odeslat BTC (PSBT)</button>
-        <button id="swapBtn">Swap (0.5% fee)</button>
+        <h3>Odeslat transakci / Klientský Swap</h3>
+        <label for="txTarget">Cílová adresa:</label><br>
+        <input type="text" id="txTarget" placeholder="0x... nebo bc1..."><br>
+        <label for="txAmount">Částka:</label><br>
+        <input type="number" id="txAmount" step="any" placeholder="0.00"><br><br>
+        
+        <button id="sendEthBtn">Odeslat ETH (Ankr RPC)</button>
+        <button id="sendBtcBtn">Odeslat BTC (PSBT Blockstream)</button>
+        <button id="swapBtn">Swap tokenů (1inch Router - 0.5% fee)</button>
     </div>
+
+    <!-- Načtení vendor knihoven stažených přes PowerShell -->
     <script src="js/vendor/crypto-js.min.js"></script>
     <script src="js/vendor/ethers.umd.min.js"></script>
+    
+    <!-- Architektonické vrstvy aplikace -->
+    <script src="js/security.js"></script>
+    <script src="js/crypto-vault.js"></script>
+    <script src="js/blockchain.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
