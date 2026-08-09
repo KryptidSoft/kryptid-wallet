@@ -2,9 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <!-- Aktualizovaná CSP hlavička povolující unpkg.com pro bezpečné klientské kryptografické operace -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.ankr.com https://rpc.ankr.com https://api.1inch.dev https://blockstream.info https://blockchain.info https://unpkg.com;">
+    <!-- OPRAVENÁ PRODUKČNÍ CSP HLAVIČKA: Povoluje přesnou doménu kryptidsoft.github.io pro bezchybný online provoz -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://kryptidsoft.github.io; connect-src 'self' https://*.ankr.com https://rpc.ankr.com https://api.1inch.dev https://blockstream.info https://blockchain.info https://unpkg.com; script-src 'self' 'unsafe-inline' https://unpkg.com https://kryptidsoft.github.io;">
+    
     <title>Kryptid Wallet</title>
+    
+    <!-- Propojení vaší nové 512x512px PNG ikony pro počítače i mobilní zařízení -->
+    <link rel="icon" type="image/png" sizes="512x512" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
 </head>
 <body>
 
