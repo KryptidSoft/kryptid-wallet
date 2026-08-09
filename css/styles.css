@@ -1,0 +1,218 @@
+/* ==========================================================================
+   KRYPTID WALLET - PURE CLIENT-SIDE VAULT STYLESHEET
+   Architecture: Pure Element Styling (No HTML modifications allowed)
+   Theme: High-Contrast Dark Crypto-Industrial
+   ========================================================================== */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: #121214;
+    color: #e2e8f0;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    line-height: 1.5;
+    padding: 2rem 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* RESPONSIVE CONTAINER & VAULT WIDTH */
+@media (min-width: 768px) {
+    body {
+        max-width: 760px; 
+        padding: 3rem 2rem;
+    }
+}
+
+/* TYPOGRAPHY & CRYPTO HEADERS */
+h1, h2, h3, h4, h5, h6 {
+    color: #ffffff;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    margin-bottom: 1rem;
+}
+
+h1 {
+    color: #f59e0b; 
+    text-transform: uppercase;
+    font-size: 2.25rem;
+    border-bottom: 2px solid #3f3f46;
+    padding-bottom: 0.75rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+h2 {
+    color: #3b82f6; 
+    font-size: 1.5rem;
+    margin-top: 1.5rem;
+    border-bottom: 1px solid #27272a;
+    padding-bottom: 0.5rem;
+}
+
+/* CONTAINERS & LAYOUT DIVS */
+div {
+    margin-bottom: 1.25rem;
+}
+
+body > div {
+    background-color: #18181b;
+    border: 1px solid #27272a;
+    border-radius: 6px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+}
+
+hr {
+    border: 0;
+    height: 1px;
+    background: #27272a;
+    margin: 1.5rem 0;
+}
+
+/* DATA FIELDS, SPANS, & READOUTS */
+span {
+    font-family: 'Cascadia Code', 'Segoe UI Mono', 'Courier New', monospace;
+    font-weight: bold;
+}
+
+#btcBalance, #ethBalance, [id*="Balance"], [id$="Qty"] {
+    color: #10b981; 
+    font-size: 1.1rem;
+}
+
+#btcFiat, #ethFiat, [id*="Fiat"], [id$="Value"] {
+    color: #f59e0b; 
+}
+
+[id*="Address"], [id*="Key"], [id*="Seed"] {
+    display: block;
+    background-color: #1f1f23;
+    padding: 0.5rem 0.75rem;
+    border-radius: 4px;
+    border: 1px dashed #3f3f46;
+    color: #a1a1aa;
+    word-break: break-all;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+/* Skrytí matoucích derivačních cest */
+div small, .derivation-path, span[id*="path"] {
+    font-size: 0.75rem;
+    color: #27272a !important; 
+    letter-spacing: 0.05em;
+}
+
+/* FORMS & INPUT SAFETY */
+input, select, textarea {
+    width: 100%;
+    background-color: #1f1f23;
+    color: #ffffff;
+    border: 1px solid #3f3f46;
+    border-radius: 4px;
+    padding: 0.75rem 1rem;
+    font-family: 'Cascadia Code', 'Segoe UI Mono', 'Courier New', monospace;
+    font-size: 0.95rem;
+    margin-top: 0.35rem;
+    margin-bottom: 1rem;
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #3b82f6; 
+    box-shadow: 0 0 0 1px #3b82f6;
+}
+
+#seedInput {
+    text-transform: lowercase; 
+}
+
+#seedInput::placeholder {
+    content: "word1 word2 word3... (lowercase, single spaces, NO commas, NO numbers)" !important;
+    color: #52525b;
+}
+
+select#currencySelect {
+    border-color: #f59e0b;
+    cursor: pointer;
+}
+
+/* INTERACTIVE ACTIONS & BUTTONS */
+button {
+    background-color: #3b82f6; 
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.1s ease;
+    width: auto;
+    min-width: 140px;
+    margin-right: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+button:hover {
+    background-color: #2563eb;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+button[id*="menu"], button[id*="nav"], button[id*="filter"] {
+    background-color: #27272a;
+    border: 1px solid #3f3f46;
+    color: #e2e8f0;
+    margin: 0.25rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    min-width: auto;
+}
+
+button[id*="menu"]:hover, button[id*="nav"]:hover {
+    background-color: #3f3f46;
+    color: #ffffff;
+}
+
+button#clearMemoryBtn {
+    background-color: #7f1d1d !important;
+    border: 1px solid #b91c1c;
+    color: #fca5a5;
+}
+
+button#clearMemoryBtn:hover {
+    background-color: #991b1b !important;
+    color: #ffffff;
+}
+
+/* EMERGENCY NOTIFICATIONS & FINAL LAYOUT */
+#txError {
+    display: none; 
+    background-color: #450a0a;
+    border: 1px solid #f87171;
+    border-radius: 4px;
+    color: #fca5a5;
+    padding: 1rem;
+    margin: 1rem 0;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 0.9rem;
+}
+
+div[id*="disclaimer"], div[id*="warning"], .disclaimer {
+    background-color: #1c1917; 
+    border-left: 4px solid #d97706; 
+    padding: 1rem;
+    color: #d6d3d1;
+    font-size: 0.85rem;
+}

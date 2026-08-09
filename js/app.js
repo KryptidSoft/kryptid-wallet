@@ -160,14 +160,23 @@ document.addEventListener('DOMContentLoaded', () => {
         BlockchainService.executeSwap(amount);
     });
 
+    // Pojistný zámek, který zabrání nekonečnému zacyklení a pádu prohlížeče
+    let isFetching = false;
+
     // Change Event: Automatically recalculate fiat values without re-logging whenever the currency switch is triggered
     document.getElementById('currencySelect').addEventListener('change', async () => {
-        const btcAddr = document.getElementById('btcAddress').innerText;
-        if (btcAddr && btcAddr !== '---') {
+        // Pokud už stahování dat běží, nepustíme kód dál a kruh se přeruší
+        if (isFetching) return;
+        
+        try {
+            isFetching = true; // Zamkneme proces
             console.log("[Kryptid] Fiat configuration modified by user. Fetching active parameters...");
+            // OPRAVENO: Voláme stahování dat HNED, bez ohledu na to, zda je peněženka prázdná nebo načtená
             await BlockchainService.fetchAndDisplayBalances();
+        } catch (err) {
+            console.error("[Kryptid] Fetch error:", err.message);
+        } finally {
+            isFetching = false; // Po kompletním dokončení zámek zase odemkneme
         }
     });
-
-    console.log("[Kryptid Core] UI initialization completed. All architectural layers are linked.");
 });

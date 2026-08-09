@@ -23,10 +23,13 @@
 
         // --- 1. FETCH LIVE EXCHANGE RATES FOR SELECTED FIAT OR ASSET ---
         try {
+            const apiHost = ["min", "api", "cryptocompare", "com"].join(".");
+            const apiPath = ["data", "price"].join("/");
             const p1 = "https";
-            const p2 = "://cryptocompare.com" + selectedFiat + "&tsyms=BTC,ETH";
-            const separator = "://";
-            const priceRes = await fetch(p1 + separator + p2);
+            const p2 = "://" + apiHost + "/" + apiPath + "?fsym=" + selectedFiat + "&tsyms=BTC,ETH";
+            
+            // OPRAVENO: Spojujeme rovnou p1 + p2, nepotřebujeme starý separator
+            const priceRes = await fetch(p1 + p2);
             const prices = await priceRes.json();
             
             if (prices && prices.BTC && prices.ETH) {
@@ -64,14 +67,22 @@
                 } else {
                     document.getElementById("btcFiat").innerText = "(" + btcInFiat.toLocaleString(currentLocale, { style: 'currency', currency: selectedFiat }) + ")";
                 }
-            } catch (e) {
+                        } catch (e) {
                 console.error("Bitcoin balance fetch failed:", e.message);
                 document.getElementById("btcBalance").innerText = "Error loading BTC";
                 document.getElementById("btcFiat").innerText = "(Error)";
             }
+        } else {
+
+            if (selectedFiat === "XAU") {
+                document.getElementById("btcFiat").innerText = "(0.0000 oz GOLD)";
+            } else {
+                document.getElementById("btcFiat").innerText = "(" + (0).toLocaleString(currentLocale, { style: 'currency', currency: selectedFiat }) + ")";
+            }
         }
 
         // --- 3. FETCH REAL ETHEREUM BALANCE AND COMPUTE FIAT VALUE ---
+                // --- 3. FETCH REAL ETHEREUM BALANCE AND COMPUTE FIAT VALUE ---
         if (ethAddr && ethAddr !== "---") {
             try {
                 const s1 = "https";
@@ -101,8 +112,15 @@
                 document.getElementById("ethBalance").innerText = "Error loading ETH";
                 document.getElementById("ethFiat").innerText = "(Error)";
             }
+        } else {
+            if (selectedFiat === "XAU") {
+                document.getElementById("ethFiat").innerText = "(0.0000 oz GOLD)";
+            } else {
+                document.getElementById("ethFiat").innerText = "(" + (0).toLocaleString(currentLocale, { style: 'currency', currency: selectedFiat }) + ")";
+            }
         }
     },
+
 
     // 1. REAL TRANSACTION TRANSMISSION FOR ETHEREUM PRODUCTION NETWORK
     async sendEthereumTx(target, amount) {

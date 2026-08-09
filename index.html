@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
+<link rel="stylesheet" href="css/styles.css">
     <meta charset="UTF-8">
     <!-- Finální produkční CSP hlavička umožňující provoz z disku i z GitHub Pages bez blokování skriptů -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://kryptidsoft.github.io; connect-src 'self' https://*.ankr.com https://rpc.ankr.com https://api.1inch.dev https://blockstream.info https://blockchain.info https://unpkg.com https://cryptocompare.com; script-src 'self' 'unsafe-inline' https://unpkg.com https://kryptidsoft.github.io;">
@@ -65,11 +66,12 @@
         </select>
         <br><br>
 
-        <p>Bitcoin SegWit (m/44'/0'/0'/0/0): <span id="btcAddress">---</span></p>
-        <p>Bitcoin Balance: <span id="btcBalance">0.00000000 BTC</span> <span id="btcFiat">(0.00 USD)</span></p>
+        <p><strong>Bitcoin Address:</strong> <span id="btcAddress">---</span></p>
+        <p><strong>Bitcoin Balance:</strong> <span id="btcBalance">0.00000000 BTC</span> <span id="btcFiat">(0.00 USD)</span></p>
         <br>
-        <p>Ethereum (m/44'/60'/0'/0/0): <span id="ethAddress">---</span></p>
-        <p>Ethereum Balance: <span id="ethBalance">0.0000 ETH</span> <span id="ethFiat">(0.00 USD)</span></p>
+        <p><strong>Ethereum Address:</strong> <span id="ethAddress">---</span></p>
+        <p><strong>Ethereum Balance:</strong> <span id="ethBalance">0.0000 ETH</span> <span id="ethFiat">(0.00 USD)</span></p>
+
     </div>
 
     <hr>
