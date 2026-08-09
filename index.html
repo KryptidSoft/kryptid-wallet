@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <!-- Finální produkční CSP hlavička umožňující provoz z disku i z GitHub Pages bez blokování skriptů -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://kryptidsoft.github.io; connect-src 'self' https://*.ankr.com https://rpc.ankr.com https://api.1inch.dev https://blockstream.info https://blockchain.info https://unpkg.com; script-src 'self' 'unsafe-inline' https://unpkg.com https://kryptidsoft.github.io;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://kryptidsoft.github.io; connect-src 'self' https://*.ankr.com https://rpc.ankr.com https://api.1inch.dev https://blockstream.info https://blockchain.info https://unpkg.com https://cryptocompare.com; script-src 'self' 'unsafe-inline' https://unpkg.com https://kryptidsoft.github.io;">
     
     <title>Kryptid Wallet</title>
     
@@ -38,11 +38,38 @@
 
     <hr>
 
-    <!-- Zone 2: Addresses Display -->
+    <!-- Zone 2: Addresses & Balances Display (Bitcoin row first, Alphabetical select) -->
     <div>
-        <h3>Your Addresses</h3>
+        <h3>Your Addresses & Balances</h3>
+        
+        <label for="currencySelect">Display Value In:</label>
+        <select id="currencySelect">
+            <!-- Main global pillars at the absolute top -->
+            <option value="USD">USD ($) - US Dollar</option>
+            <option value="XAU">GOLD (oz) - Physical Gold Ounce</option>
+            
+            <!-- Other world currencies sorted precisely in alphabetical order -->
+            <option value="BRL">BRL (R$) - Brazilian Real</option>
+            <option value="CAD">CAD ($) - Canadian Dollar</option>
+            <option value="CNY">CNY (¥) - Chinese Yuan</option>
+            <option value="CZK">CZK (Kč) - Czech Koruna</option>
+            <option value="EUR">EUR (€) - Euro</option>
+            <option value="GBP">GBP (£) - British Pound</option>
+            <option value="CHF">CHF (CHF) - Swiss Franc</option>
+            <option value="INR">INR (₹) - Indian Rupee</option>
+            <option value="IRR">IRR (﷼) - Iranian Rial</option>
+            <option value="JPY">JPY (¥) - Japanese Yen</option>
+            <option value="PLN">PLN (zł) - Polish Zloty</option>
+            <option value="RUB">RUB (₽) - Russian Ruble</option>
+            <option value="TRY">TRY (₺) - Turkish Lira</option>
+        </select>
+        <br><br>
+
         <p>Bitcoin SegWit (m/44'/0'/0'/0/0): <span id="btcAddress">---</span></p>
+        <p>Bitcoin Balance: <span id="btcBalance">0.00000000 BTC</span> <span id="btcFiat">(0.00 USD)</span></p>
+        <br>
         <p>Ethereum (m/44'/60'/0'/0/0): <span id="ethAddress">---</span></p>
+        <p>Ethereum Balance: <span id="ethBalance">0.0000 ETH</span> <span id="ethFiat">(0.00 USD)</span></p>
     </div>
 
     <hr>
@@ -54,6 +81,9 @@
         <input type="text" id="txTarget" placeholder="0x... or bc1..."><br>
         <label for="txAmount">Amount:</label><br>
         <input type="number" id="txAmount" step="any" placeholder="0.00"><br><br>
+        
+        <!-- Target container for client-side red error validation messages -->
+        <div id="txError" style="color: red; font-family: sans-serif; font-size: 13px; font-weight: bold; margin-bottom: 15px; display: none;"></div>
         
         <button id="sendEthBtn">Send ETH (Ankr RPC)</button>
         <button id="sendBtcBtn">Send BTC (PSBT Blockstream)</button>

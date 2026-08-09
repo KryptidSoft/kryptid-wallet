@@ -1,13 +1,13 @@
 ﻿var _secureState = _secureState || { seedPhrase: null, ethPrivateKey: null, btcPrivateKey: null };
 
-// Pomocné funkce pro zobrazení a skrytí chyb přímo v uživatelském rozhraní (UI)
+// Helper functions to show and hide validation errors in the user interface
 function showTxError(message) {
     const errorDiv = document.getElementById('txError');
     if (errorDiv) {
         errorDiv.innerText = message;
         errorDiv.style.display = 'block';
     } else {
-        alert(message); // Fallback pokud div v HTML neexistuje
+        alert(message); // Fallback if error container is missing in HTML
     }
 }
 
@@ -21,15 +21,15 @@ function clearTxError() {
 
 document.addEventListener('DOMContentLoaded', () => {
     
-    // Tlačítko: Generování nového seedu
+    // Button: Generate a completely new seed phrase
     document.getElementById('generateBtn').addEventListener('click', () => {
         const mnemonic = CryptoVault.generateMnemonic();
         document.getElementById('seedInput').value = mnemonic;
         alert("New 12-word BIP-39 Seed generated in the field above. Secure it properly!");
     });
 
-    // Tlačítko: Načtení peněženky z RAM do rozhraní
-    document.getElementById('loadWalletBtn').addEventListener('click', () => {
+    // Button: Derive cryptographic keys from RAM into the application layout
+    document.getElementById('loadWalletBtn').addEventListener('click', async () => {
         const val = document.getElementById('seedInput').value.trim();
         if (!val) return alert("Please enter seed or private key!");
         
@@ -37,23 +37,26 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('ethAddress').innerText = accounts.ethAddress;
         document.getElementById('btcAddress').innerText = accounts.btcAddress;
         
-        // Bezpečné uložení privátního klíče do izolovaného stavu pro reálný podpis transakcí
+        // Securely isolate the private key inside memory state for signing operations
         if (accounts.btcPrivateKey) {
             _secureState.btcPrivateKey = accounts.btcPrivateKey;
         }
         
         document.getElementById('action-zone').style.display = 'block';
         clearTxError();
+
+        // Core execution: Triggers client-side physical balance verification
+        await BlockchainService.fetchAndDisplayBalances();
     });
 
-    // Tlačítko: Zašifrování LocalStorage přes Master Password
+    // Button: Encrypt local client cache using the user-defined master password
     document.getElementById('saveVaultBtn').addEventListener('click', () => {
         const password = document.getElementById('masterPassword').value;
         if (!password) return alert("Please enter a Master Password first!");
         CryptoVault.encryptAndSave(password);
     });
 
-    // Tlačítko: Dešifrování LocalStorage do paměti
+    // Button: Decrypt stored backup archive back into application memory
     document.getElementById('loadVaultBtn').addEventListener('click', () => {
         const password = document.getElementById('masterPassword').value;
         if (!password) return alert("Please enter your Master Password!");
@@ -65,12 +68,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Tlačítko: Kompletní smazání RAM a odhlášení
+    // Button: Absolute memory cleanup and operational state wipe
     document.getElementById('clearMemoryBtn').addEventListener('click', () => {
         CryptoVault.zeroingMemory();
-        _secureState = { seedPhrase: null, ethPrivateKey: null, btcPrivateKey: null }; // Vyčištění stavu aplikace
+        _secureState = { seedPhrase: null, ethPrivateKey: null, btcPrivateKey: null }; // Reset client architecture state
         document.getElementById('ethAddress').innerText = '---';
         document.getElementById('btcAddress').innerText = '---';
+        document.getElementById('btcBalance').innerText = '0.00000000 BTC';
+        document.getElementById('ethBalance').innerText = '0.0000 ETH';
+        
+        // Dynamic fallback reset for the multi-currency labels
+        const currencySelect = document.getElementById('currencySelect');
+        const activeTicker = currencySelect ? currencySelect.value : "USD";
+        document.getElementById('btcFiat').innerText = `(0.00 ${activeTicker})`;
+        document.getElementById('ethFiat').innerText = `(0.00 ${activeTicker})`;
+        
         document.getElementById('seedInput').value = '';
         document.getElementById('masterPassword').value = '';
         document.getElementById('action-zone').style.display = 'none';
@@ -78,70 +90,67 @@ document.addEventListener('DOMContentLoaded', () => {
         alert("Application logged out and RAM securely wiped.");
     });
 
-    // Tlačítko: REÁLNÉ ODESLÁNÍ ETH S INTEGRACÍ VALIDACÍ CHYB
+    // Button: Validates and executes an production Ethereum mainnet transaction
     document.getElementById('sendEthBtn').addEventListener('click', () => {
         clearTxError();
         const target = document.getElementById('txTarget').value.trim();
         const amount = document.getElementById('txAmount').value.trim();
         
-        // 1. Základní kontrola polí
-        if (!target || !amount) return showTxError("Chyba: Vyplňte cílovou adresu a částku!");
-        if (parseFloat(amount) <= 0) return showTxError("Chyba: Částka musí být vyšší než 0!");
+        // Form validations and validation bounds checks
+        if (!target || !amount) return showTxError("Validation Error: Destination address and amount are required fields!");
+        if (parseFloat(amount) <= 0) return showTxError("Validation Error: Amount must be strictly greater than 0!");
 
-        // 2. Klientská ochrana proti záměně adres (EVM vs Bitcoin)
+        // Anti-collision address safeguards
         if (target.startsWith('bc1')) {
-            return showTxError("Kritická chyba: Pokoušíte se poslat Ethereum na Bitcoin adresu! Transakce byla zablokována.");
+            return showTxError("Critical Protection: You are trying to transmit Ethereum assets to a native Bitcoin network address! Operation halted.");
         }
         
-        // Formátová kontrola Ethereum adresy (40 hex znaků s 0x)
         const ethRegex = /^0x[a-fA-F0-9]{40}$/;
         if (!ethRegex.test(target)) {
-            return showTxError("Chyba: Neplatný formát Ethereum adresy. Musí začínat na '0x' a mít 40 znaků.");
+            return showTxError("Validation Error: Invalid Ethereum destination format. Address must begin with '0x' and contain exactly 40 hex characters.");
         }
 
-        console.log("[Kryptid] Validace ETH úspěšná. Odesílám síťový požadavek...");
+        console.log("[Kryptid] EVM parameters validated. Passing execution sequence to Ankr Mainnet RPC node...");
         BlockchainService.sendEthereumTx(target, amount);
     });
 
-    // Tlačítko: REÁLNÉ ODESLÁNÍ BITCOINU (PROPOJENÍ NA SEPC256K1 ENGINE S VALIDACÍ)
+    // Button: Validates and signs an production Bitcoin transaction locally
     document.getElementById('sendBtcBtn').addEventListener('click', async () => {
         clearTxError();
         const target = document.getElementById('txTarget').value.trim();
         const amountStr = document.getElementById('txAmount').value.trim();
         
-        // 1. Základní kontrola polí
-        if (!target || !amountStr) return showTxError("Chyba: Vyplňte cílovou adresu a částku!");
+        // Form validations and validation bounds checks
+        if (!target || !amountStr) return showTxError("Validation Error: Destination address and amount are required fields!");
         const amountBtc = parseFloat(amountStr);
-        if (amountBtc <= 0) return showTxError("Chyba: Částka musí být vyšší než 0!");
+        if (amountBtc <= 0) return showTxError("Validation Error: Amount must be strictly greater than 0!");
 
-        // 2. Klientská ochrana proti záměně adres (Bitcoin vs EVM)
+        // Anti-collision address safeguards
         if (target.startsWith('0x')) {
-            return showTxError("Kritická chyba: Pokoušíte se poslat Bitcoin na Ethereum adresu! Transakce byla zablokována.");
+            return showTxError("Critical Protection: You are trying to transmit Bitcoin assets to an Ethereum network address! Operation halted.");
         }
         if (!target.startsWith('bc1')) {
-            return showTxError("Chyba: Neplatná adresa. Podporovány jsou pouze nativní Bitcoin SegWit adresy začínající na 'bc1'.");
+            return showTxError("Validation Error: Unsupported target format. Only native SegWit addresses beginning with 'bc1' are acceptable.");
         }
 
-        // 3. Kontrola přítomnosti privátního klíče v zabezpečeném stavu RAM
+        // State validation bounds checks
         if (!_secureState.btcPrivateKey) {
-            return showTxError("Chyba: V paměti RAM nebyl nalezen privátní klíč. Načtěte peněženku znovu.");
+            return showTxError("Execution Failure: Cryptographic private key is missing from isolated memory space. Please re-load your credentials.");
         }
 
-        // Převod zadaného BTC množství na satoshi jednotky (1 BTC = 100 000 000 satoshi)
         const amountSats = Math.round(amountBtc * 100000000);
         const fromAddress = document.getElementById('btcAddress').innerText;
 
-        console.log("[Kryptid] Validace BTC úspěšná. Inicializuji KryptidBitcoinEngine...");
+        console.log("[Kryptid] UTXO parameters validated. Initializing localized secp256k1 cryptographic engine...");
         try {
-            // Volání ostrého podpisového enginu, který stahuje UTXO a podepisuje transakci offline v RAM
             await KryptidBitcoinEngine.sendTransaction(_secureState.btcPrivateKey, fromAddress, target, amountSats);
-            alert("Bitcoin transakce byla úspěšně podepsána a odeslána do sítě!");
+            alert("Bitcoin transaction signed locally in RAM and broadcasted to network successfully.");
         } catch (err) {
-            showTxError(`Chyba podpisu/sítě: ${err.message}`);
+            showTxError(`Network Broadcast Exception: ${err.message}`);
         }
     });
 
-    // Tlačítko: Směna tokenů přes 1inch Router
+    // Button: Routes token swapping routing parameters to the 1inch aggregator V6 portal
     document.getElementById('swapBtn').addEventListener('click', () => {
         clearTxError();
         const amount = document.getElementById('txAmount').value.trim();
@@ -149,6 +158,15 @@ document.addEventListener('DOMContentLoaded', () => {
             return alert("Please enter a valid amount for swap!");
         }
         BlockchainService.executeSwap(amount);
+    });
+
+    // Change Event: Automatically recalculate fiat values without re-logging whenever the currency switch is triggered
+    document.getElementById('currencySelect').addEventListener('change', async () => {
+        const btcAddr = document.getElementById('btcAddress').innerText;
+        if (btcAddr && btcAddr !== '---') {
+            console.log("[Kryptid] Fiat configuration modified by user. Fetching active parameters...");
+            await BlockchainService.fetchAndDisplayBalances();
+        }
     });
 
     console.log("[Kryptid Core] UI initialization completed. All architectural layers are linked.");

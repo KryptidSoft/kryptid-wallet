@@ -1,9 +1,113 @@
 ﻿const BlockchainService = {
-    // 1. REÁLNÉ ODESLÁNÍ ETHEREA PŘES PRODUKČNÍ RPC UZEL ANKR
+    // AUTOMATIC MULTI-FIAT BLOCKCHAIN BALANCE CONVERSION ENGINE (100% ENGLISH)
+    async fetchAndDisplayBalances() {
+        const btcAddr = document.getElementById("btcAddress").innerText;
+        const ethAddr = document.getElementById("ethAddress").innerText;
+
+        // Dynamically fetch the user-selected currency option from the HTML dropdown
+        const selectedFiat = document.getElementById("currencySelect").value || "USD";
+
+        let calculatedBtcAmount = 0;
+        let calculatedEthAmount = 0;
+        let btcPriceFiat = 0;
+        let ethPriceFiat = 0;
+
+        // Standardized international locale mapping for precise client-side currency rendering
+        const localeMap = { 
+            "USD": "en-US", "CZK": "cs-CZ", "EUR": "de-DE", "XAU": "en-US",
+            "GBP": "en-GB", "CHF": "de-CH", "JPY": "ja-JP", "INR": "hi-IN", 
+            "BRL": "pt-BR", "RUB": "ru-RU", "CNY": "zh-CN", "PLN": "pl-PL",
+            "CAD": "en-CA", "TRY": "tr-TR", "IRR": "fa-IR"
+        };
+        const currentLocale = localeMap[selectedFiat] || "en-US";
+
+        // --- 1. FETCH LIVE EXCHANGE RATES FOR SELECTED FIAT OR ASSET ---
+        try {
+            const p1 = "https";
+            const p2 = "://cryptocompare.com" + selectedFiat + "&tsyms=BTC,ETH";
+            const separator = "://";
+            const priceRes = await fetch(p1 + separator + p2);
+            const prices = await priceRes.json();
+            
+            if (prices && prices.BTC && prices.ETH) {
+                // Invert the rate since API returns how much crypto equals 1 unit of fiat
+                btcPriceFiat = 1 / prices.BTC;
+                ethPriceFiat = 1 / prices.ETH;
+            }
+        } catch (err) {
+            console.error("Multi-fiat conversion exchange rates fetch failed:", err.message);
+        }
+
+        // --- 2. FETCH REAL BITCOIN BALANCE AND COMPUTE FIAT VALUE ---
+        if (btcAddr && btcAddr !== "---") {
+            try {
+                const s1 = "https";
+                const s2 = "blockstream.info/api";
+                const separator = "://";
+                const btcUrl = s1 + separator + s2 + "/address/" + btcAddr + "/utxo";
+                
+                const res = await fetch(btcUrl);
+                const utxos = await res.json();
+                
+                let totalSatoshi = 0;
+                utxos.forEach(utxo => { totalSatoshi += utxo.value; });
+                
+                calculatedBtcAmount = totalSatoshi / 100000000;
+                document.getElementById("btcBalance").innerText = calculatedBtcAmount.toFixed(8) + " BTC";
+                
+                // Mathematical multiplication with the live market rate
+                const btcInFiat = calculatedBtcAmount * btcPriceFiat;
+                
+                // Format the string based on international standards (e.g. $, Kč, €, oz)
+                if (selectedFiat === "XAU") {
+                    document.getElementById("btcFiat").innerText = "(" + btcInFiat.toFixed(4) + " oz GOLD)";
+                } else {
+                    document.getElementById("btcFiat").innerText = "(" + btcInFiat.toLocaleString(currentLocale, { style: 'currency', currency: selectedFiat }) + ")";
+                }
+            } catch (e) {
+                console.error("Bitcoin balance fetch failed:", e.message);
+                document.getElementById("btcBalance").innerText = "Error loading BTC";
+                document.getElementById("btcFiat").innerText = "(Error)";
+            }
+        }
+
+        // --- 3. FETCH REAL ETHEREUM BALANCE AND COMPUTE FIAT VALUE ---
+        if (ethAddr && ethAddr !== "---") {
+            try {
+                const s1 = "https";
+                const s2 = "rpc.ankr.com";
+                const s3 = "eth";
+                const separator = "://";
+                const rpcUrl = s1 + separator + s2 + "/" + s3;
+                
+                const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
+                const balanceBigNumber = await provider.getBalance(ethAddr);
+                
+                const totalEthStr = ethers.utils.formatEther(balanceBigNumber);
+                calculatedEthAmount = parseFloat(totalEthStr);
+                document.getElementById("ethBalance").innerText = calculatedEthAmount.toFixed(4) + " ETH";
+                
+                // Mathematical multiplication with the live market rate
+                const ethInFiat = calculatedEthAmount * ethPriceFiat;
+                
+                // Format the string based on international standards
+                if (selectedFiat === "XAU") {
+                    document.getElementById("ethFiat").innerText = "(" + ethInFiat.toFixed(4) + " oz GOLD)";
+                } else {
+                    document.getElementById("ethFiat").innerText = "(" + ethInFiat.toLocaleString(currentLocale, { style: 'currency', currency: selectedFiat }) + ")";
+                }
+            } catch (e) {
+                console.error("Ethereum balance fetch failed:", e.message);
+                document.getElementById("ethBalance").innerText = "Error loading ETH";
+                document.getElementById("ethFiat").innerText = "(Error)";
+            }
+        }
+    },
+
+    // 1. REAL TRANSACTION TRANSMISSION FOR ETHEREUM PRODUCTION NETWORK
     async sendEthereumTx(target, amount) {
         if (!_secureState.ethPrivateKey) return alert("Error: Private key missing in RAM!");
         try {
-            // Imunní skládání adresy https://ankr.com bez rizikových znaků
             const s1 = "https";
             const s2 = "rpc.ankr.com";
             const s3 = "eth";
@@ -28,7 +132,7 @@
         }
     },
 
-    // 2. PROPOJENÍ NA REÁLNÝ BITCOIN SIGNING ENGINE Z APP.JS
+    // 2. CRYPTOGRAPHIC SIGNING REDIRECTION FOR NATIVE BITCOIN CORE ENGINE
     async sendBitcoinPSBT(target, amount) {
         if (!_secureState.btcPrivateKey) return alert("Error: Bitcoin private key missing in RAM!");
         try {
@@ -36,11 +140,9 @@
             const btcAddr = document.getElementById("btcAddress").innerText;
             const amountBtc = parseFloat(amount);
             
-            // Převod na satoshi jednotky (1 BTC = 100 000 000 satoshi)
             const amountSats = Math.round(amountBtc * 100000000);
 
             alert("Signing Bitcoin Transaction locally via KryptidBitcoinEngine...");
-            // Volání ostrého podpisového klientského enginu z app.js
             await KryptidBitcoinEngine.sendTransaction(_secureState.btcPrivateKey, btcAddr, target, amountSats);
             alert("PSBT successfully signed locally and broadcasted to Bitcoin network.");
         } catch (e) { 
@@ -48,7 +150,7 @@
         }
     },
 
-    // 3. REÁLNÁ SMĚNA TOKENŮ PŘES PRODUKČNÍ 1INCH API V6.0
+    // 3. TOKEN SWAP ROUTING VIA THE DECENTRALIZED 1INCH PORTAL ROUTER v6.0
     async executeSwap(amount) {
         const ethAddr = document.getElementById("ethAddress").innerText;
         const apiKey = document.getElementById("oneInchKey").value.trim();
@@ -66,7 +168,6 @@
 
         alert("Calling client-side 1inch API to build swap route...");
         try {
-            // Imunní skládání endpointu pro 1inch bez poškození dolarových šablon chatu
             const p1 = "https";
             const p2 = "api.1inch.dev";
             const p3 = "swap/v6.0/1/swap";
