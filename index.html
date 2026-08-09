@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <!-- OPRAVENÁ PRODUKČNÍ CSP HLAVIČKA: Povoluje přesnou doménu kryptidsoft.github.io pro bezchybný online provoz -->
+    <!-- Finální produkční CSP hlavička umožňující provoz z disku i z GitHub Pages bez blokování skriptů -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://kryptidsoft.github.io; connect-src 'self' https://*.ankr.com https://rpc.ankr.com https://api.1inch.dev https://blockstream.info https://blockchain.info https://unpkg.com; script-src 'self' 'unsafe-inline' https://unpkg.com https://kryptidsoft.github.io;">
     
     <title>Kryptid Wallet</title>
     
-    <!-- Propojení vaší nové 512x512px PNG ikony pro počítače i mobilní zařízení -->
-    <link rel="icon" type="image/png" sizes="512x512" href="icon.png">
-    <link rel="apple-touch-icon" href="icon.png">
+    <!-- Propojení vaší nové 512x512px PNG ikony pod jejím reálným názvem -->
+    <link rel="icon" type="image/png" sizes="512x512" href="favicon.png">
+    <link rel="apple-touch-icon" href="favicon.png">
 </head>
 <body>
 
@@ -41,8 +41,8 @@
     <!-- Zone 2: Addresses Display -->
     <div>
         <h3>Your Addresses</h3>
-        <p>Ethereum (m/44'/60'/0'/0/0): <span id="ethAddress">---</span></p>
         <p>Bitcoin SegWit (m/44'/0'/0'/0/0): <span id="btcAddress">---</span></p>
+        <p>Ethereum (m/44'/60'/0'/0/0): <span id="ethAddress">---</span></p>
     </div>
 
     <hr>
