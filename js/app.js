@@ -30,9 +30,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Button: Derive cryptographic keys from RAM into the application layout
     document.getElementById('loadWalletBtn').addEventListener('click', async () => {
-        const val = document.getElementById('seedInput').value.trim();
+        let val = document.getElementById('seedInput').value.trim();
         if (!val) return alert("Please enter seed or private key!");
-        
+        clearTxError();
+
+        // INTEGROVANÁ KONTROLA SEEDU PROTI PŘEKLEPŮM
+        if (val.includes(' ') || val.split(/[\s,.\-_]+/).length > 1) {
+            let cleanText = val.toLowerCase()
+                               .replace(/[.,\-_#@*+/\\()\[\]{}!?:;0-9]/g, ' ')
+                               .replace(/\s+/g, ' ')
+                               .trim();
+            const words = cleanText.split(' ');
+            if (words.length !== 12 && words.length !== 24) {
+                return showTxError(`Validation Error: Seed phrase must contain exactly 12 or 24 words. Detected ${words.length} words.`);
+            }
+            try {
+                const dictResponse = await fetch('js/vendor/bip39-words.txt');
+                if (dictResponse.ok) {
+                    const dictText = await dictResponse.text();
+                    const validBipWords = dictText.split(/\r?\n/).map(w => w.trim()).filter(w => w.length > 0);
+                    for (let word of words) {
+                        if (!validBipWords.includes(word)) {
+                            return showTxError(`Critical Typos Detected: The word "${word}" does not exist in the official BIP-39 standard dictionary! Please fix your spelling.`);
+                        }
+                    }
+                }
+            } catch (err) { console.warn("Validation skipped:", err.message); }
+            val = words.join(' ');
+            document.getElementById('seedInput').value = val;
+        }
+
         const accounts = CryptoVault.deriveKeys(val);
         document.getElementById('ethAddress').innerText = accounts.ethAddress;
         document.getElementById('btcAddress').innerText = accounts.btcAddress;
