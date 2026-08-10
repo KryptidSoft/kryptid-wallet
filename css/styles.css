@@ -197,7 +197,7 @@ button#clearMemoryBtn:hover {
 }
 
 /* EMERGENCY NOTIFICATIONS & FINAL LAYOUT */
-#txError {
+#txError, #action-zone {
     display: none; 
     background-color: #450a0a;
     border: 1px solid #f87171;

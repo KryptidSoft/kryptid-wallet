@@ -119,8 +119,48 @@
                 document.getElementById("ethFiat").innerText = "(" + (0).toLocaleString(currentLocale, { style: 'currency', currency: selectedFiat }) + ")";
             }
         }
-    },
 
+        // --- DYNAMIC ERC-20 TOKENS SCANNER (1inch API) ---
+        if (ethAddr && ethAddr !== "---") {
+            const apiKey = document.getElementById("oneInchKey")?.value?.trim();
+            if (apiKey && apiKey !== "1inch-api-key-here") {
+                try {
+                    const res = await fetch("https://1inch.dev" + ethAddr, {
+                        headers: { "Authorization": "Bearer " + apiKey }
+                    });
+                    
+                    if (res.ok) {
+                        const tokens = await res.json();
+                        const container = document.getElementById("dynamicTokensContainer");
+                        if (container) container.innerHTML = "";
+
+                        for (const [contractAddress, rawBalance] of Object.entries(tokens)) {
+                            const balanceValue = parseFloat(rawBalance);
+                            if (balanceValue > 0) {
+                                let ticker = "Token";
+                                let decimals = 18;
+                                
+                                if (contractAddress.toLowerCase() === "0xdac17f958d2ee523a2206206994597c13d831ec7") { ticker = "USDT"; decimals = 6; }
+                                else if (contractAddress.toLowerCase() === "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48") { ticker = "USDC"; decimals = 6; }
+                                else if (contractAddress.toLowerCase() === "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599") { ticker = "WBTC"; decimals = 8; }
+                                
+                                const realAmount = balanceValue / Math.pow(10, decimals);
+                                
+                                if (realAmount > 0.001 && container) {
+                                    const p = document.createElement("p");
+                                    p.innerHTML = "<strong>" + ticker + " Balance:</strong> <span>" + realAmount.toFixed(4) + " " + ticker + "</span>";
+                                    container.appendChild(p);
+                                }
+                            }
+                        }
+                    }
+                } catch (tokenErr) {
+                    console.warn("Token scanner skipped:", tokenErr.message);
+                }
+            }
+        }
+
+    }, // <--- Tohle je konec původní funkce pro zůstatky
 
     // 1. REAL TRANSACTION TRANSMISSION FOR ETHEREUM PRODUCTION NETWORK
     async sendEthereumTx(target, amount) {

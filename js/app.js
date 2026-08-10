@@ -64,6 +64,17 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('ethAddress').innerText = accounts.ethAddress;
         document.getElementById('btcAddress').innerText = accounts.btcAddress;
         
+        // AUTOMATIC DYNAMIC TRANSACTION HISTORY ROUTING VIA CLICK
+        const btcLink = document.getElementById('btcHistoryLink');
+        const ethLink = document.getElementById('ethHistoryLink');
+        
+        if (btcLink) {
+            btcLink.onclick = () => { window.open("https://blockstream.info" + accounts.btcAddress, "_blank"); };
+        }
+        if (ethLink) {
+            ethLink.onclick = () => { window.open("https://etherscan.io" + accounts.ethAddress, "_blank"); };
+        }
+        
         // Securely isolate the private key inside memory state for signing operations
         if (accounts.btcPrivateKey) {
             _secureState.btcPrivateKey = accounts.btcPrivateKey;
