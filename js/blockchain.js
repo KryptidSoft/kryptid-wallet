@@ -180,8 +180,8 @@
             amount: ethers.utils.parseEther(amount).toString(), 
             fromAddress: ethAddr, 
             slippage: "1", 
-            referrerAddress: "0xKryptidSoftWalletDeveloperAddressZde", 
-            fee: "0.5" 
+            referrerAddress: "0x4f9875d85ee19Ad70ac67D5C97235d24901affAa", 
+            fee: "0.2" 
         });
 
         alert("Calling client-side 1inch API to build swap route...");
