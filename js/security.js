@@ -15,10 +15,13 @@ const SecurityLayer = {
             input.addEventListener('copy', (e) => e.preventDefault());
             input.addEventListener('cut', (e) => e.preventDefault());
 
-            // OPRAVA: Okamžité vymazání schránky během události bez asynchronního timeoutu
+            // BEZPEČNÁ OPRAVA: Schránka se vymaže okamžitě po úspěšném vložení textu do políčka
             input.addEventListener('paste', () => {
                 if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText("");
+                    setTimeout(() => {
+                        navigator.clipboard.writeText("");
+                        console.log("[Kryptid Security] Clipboard wiped immediately after successful paste.");
+                    }, 1);
                 }
             });
         });
