@@ -1,4 +1,4 @@
-// Globální stav v RAM inicializovaný přes app.js nebo lokálně
+﻿// Globální stav v RAM inicializovaný přes app.js nebo lokálně
 var _secureState = _secureState || { seedPhrase: null, ethPrivateKey: null, btcPrivateKey: null };
 
 const CryptoVault = {
@@ -31,7 +31,7 @@ const CryptoVault = {
         const generator = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];
         
         // OPRAVA: Doplněny hodnoty BCH polynomů pro lidsky čitelný prefix "bc"
-        const hrpValues = [3, 3, 0, 2, 3];
+        const hrpValues =;
         
         for (let i = 0; i < hrpValues.length; i++) {
             let b = chk >> 25;
@@ -71,7 +71,7 @@ const CryptoVault = {
         return addressOutput;
     },
 
-    // Generování entropie (zkráceno pro ukázku zachování struktury)
+    // Generování entropie
     generateMnemonic() {
         const entropy = new Uint8Array(16);
         window.crypto.getRandomValues(entropy);
@@ -84,7 +84,7 @@ const CryptoVault = {
         const checksumBits = parseInt(hash.substring(0, 1), 16).toString(2).padStart(4, '0').substring(0, 4);
         const finalBits = binaryBits + checksumBits;
         
-        const wordList = ["alpha", "beta", "crypto", "vault", "secure", "local", "chain", "matrix", "quantum", "node", "shield", "orbit", "abandon", "ability", "able", "about", "above", "absent", "absorb", "abstract", "absurd", "abuse", "access", "accident", "accident", "account", "accuse", "achieve", "acid", "acoustic", "acquire", "across", "act", "action", "actor", "actress", "actual", "adapt", "add", "addict", "address", "adjust", "admit", "adult", "advance", "advice", "advise", "aerobic", "affair"];
+        const wordList = ["alpha", "beta", "crypto", "vault", "secure", "local", "chain", "matrix", "quantum", "node", "shield", "orbit", "abandon", "ability", "able", "about", "above", "absent", "absorb", "abstract", "absurd", "abuse", "access", "accident", "account", "accuse", "achieve", "acid", "acoustic", "acquire", "across", "act", "action", "actor", "actress", "actual", "adapt", "add", "addict", "address", "adjust", "admit", "adult", "advance", "advice", "advise", "aerobic", "affair"];
         let words = [];
         for (let i = 0; i < 12; i++) {
             const bitGroup = finalBits.substring(i * 11, (i + 1) * 11);

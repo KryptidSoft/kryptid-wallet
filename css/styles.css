@@ -1,9 +1,4 @@
-/* ==========================================================================
-   KRYPTID WALLET - PURE CLIENT-SIDE VAULT STYLESHEET
-   Architecture: Pure Element Styling (No HTML modifications allowed)
-   Theme: High-Contrast Dark Crypto-Industrial
-   ========================================================================== */
-
+/* --- AMBIENTNÍ WEB3 RESET --- */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -11,208 +6,362 @@
 }
 
 body {
-    background-color: #121214;
+    background-color: #0b0c10;
     color: #e2e8f0;
-    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-    line-height: 1.5;
-    padding: 2rem 1rem;
-    max-width: 1200px;
-    margin: 0 auto;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.4;
+    padding: 2.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
 }
 
-/* RESPONSIVE CONTAINER & VAULT WIDTH */
-@media (min-width: 768px) {
-    body {
-        max-width: 760px; 
-        padding: 3rem 2rem;
-    }
-}
-
-/* TYPOGRAPHY & CRYPTO HEADERS */
-h1, h2, h3, h4, h5, h6 {
-    color: #ffffff;
-    font-weight: 600;
-    letter-spacing: -0.025em;
+/* --- BRANDING A JEDNOTNÝ DISCLAIMER --- */
+.wallet-branding {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 520px;
     margin-bottom: 1rem;
 }
 
-h1 {
-    color: #f59e0b; 
-    text-transform: uppercase;
-    font-size: 2.25rem;
-    border-bottom: 2px solid #3f3f46;
-    padding-bottom: 0.75rem;
-    margin-bottom: 2rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+.wallet-small-logo {
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
 }
 
-h2 {
-    color: #3b82f6; 
-    font-size: 1.5rem;
-    margin-top: 1.5rem;
-    border-bottom: 1px solid #27272a;
-    padding-bottom: 0.5rem;
+.wallet-branding h1 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #ffffff;
 }
 
-/* CONTAINERS & LAYOUT DIVS */
-div {
+.disclaimer-box {
+    background-color: #241416;
+    border: 1px solid #4a1f22;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    color: #f87171;
+    width: 100%;
+    max-width: 520px;
+    margin-bottom: 1.5rem;
+}
+
+/* --- HLAVNÍ KONTEJNERY (KARTY APLIKACE) --- */
+#onboarding-screen, 
+#main-wallet-dashboard {
+    background-color: #131722;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 1.75rem;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 520px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+h2, h3 {
+    font-size: 1.2rem;
+    color: #ffffff;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.section-desc {
+    font-size: 0.88rem;
+    color: #64748b;
     margin-bottom: 1.25rem;
 }
 
-body > div {
-    background-color: #18181b;
-    border: 1px solid #27272a;
-    border-radius: 6px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
-}
-
-hr {
-    border: 0;
-    height: 1px;
-    background: #27272a;
-    margin: 1.5rem 0;
-}
-
-/* DATA FIELDS, SPANS, & READOUTS */
-span {
-    font-family: 'Cascadia Code', 'Segoe UI Mono', 'Courier New', monospace;
-    font-weight: bold;
-}
-
-#btcBalance, #ethBalance, [id*="Balance"], [id$="Qty"] {
-    color: #10b981; 
-    font-size: 1.1rem;
-}
-
-#btcFiat, #ethFiat, [id*="Fiat"], [id$="Value"] {
-    color: #f59e0b; 
-}
-
-[id*="Address"], [id*="Key"], [id*="Seed"] {
-    display: block;
-    background-color: #1f1f23;
-    padding: 0.5rem 0.75rem;
-    border-radius: 4px;
-    border: 1px dashed #3f3f46;
-    color: #a1a1aa;
-    word-break: break-all;
-    font-size: 0.875rem;
-    margin-top: 0.25rem;
-}
-
-/* Skrytí matoucích derivačních cest */
-div small, .derivation-path, span[id*="path"] {
-    font-size: 0.75rem;
-    color: #27272a !important; 
-    letter-spacing: 0.05em;
-}
-
-/* FORMS & INPUT SAFETY */
-input, select, textarea {
-    width: 100%;
-    background-color: #1f1f23;
-    color: #ffffff;
-    border: 1px solid #3f3f46;
-    border-radius: 4px;
-    padding: 0.75rem 1rem;
-    font-family: 'Cascadia Code', 'Segoe UI Mono', 'Courier New', monospace;
-    font-size: 0.95rem;
-    margin-top: 0.35rem;
-    margin-bottom: 1rem;
-}
-
-input:focus, select:focus, textarea:focus {
-    outline: none;
-    border-color: #3b82f6; 
-    box-shadow: 0 0 0 1px #3b82f6;
-}
-
-#seedInput {
-    text-transform: lowercase; 
-}
-
-#seedInput::placeholder {
-    content: "word1 word2 word3... (lowercase, single spaces, NO commas, NO numbers)" !important;
-    color: #52525b;
-}
-
-select#currencySelect {
-    border-color: #f59e0b;
-    cursor: pointer;
-}
-
-/* INTERACTIVE ACTIONS & BUTTONS */
+/* --- UNIVERZÁLNÍ TYRKYSOVÁ TLAČÍTKA --- */
 button {
-    background-color: #3b82f6; 
-    color: #ffffff;
+    background-color: #00ffcc;
+    color: #0b0c10;
     border: none;
-    border-radius: 4px;
-    padding: 0.75rem 1.5rem;
-    font-size: 0.95rem;
+    padding: 0.55rem 1.1rem;
+    font-size: 0.88rem;
     font-weight: 600;
+    border-radius: 4px;
     cursor: pointer;
-    transition: background-color 0.15s ease, transform 0.1s ease;
-    width: auto;
-    min-width: 140px;
-    margin-right: 0.5rem;
-    margin-top: 0.5rem;
+    transition: background-color 0.15s, transform 0.1s;
 }
 
 button:hover {
-    background-color: #2563eb;
+    background-color: #00e6b8;
 }
 
 button:active {
     transform: scale(0.98);
 }
 
-button[id*="menu"], button[id*="nav"], button[id*="filter"] {
-    background-color: #27272a;
-    border: 1px solid #3f3f46;
-    color: #e2e8f0;
-    margin: 0.25rem;
-    padding: 0.5rem 1rem;
-    font-size: 0.85rem;
-    min-width: auto;
-}
-
-button[id*="menu"]:hover, button[id*="nav"]:hover {
-    background-color: #3f3f46;
+/* Řazení úvodních onboarding tlačítek čistě pod sebe */
+.onboarding-routes button {
+    display: block;
+    width: 100%;
+    margin-bottom: 0.5rem;
+    text-align: left;
+    background-color: #1e2330;
+    border: 1px solid rgba(255, 255, 255, 0.08);
     color: #ffffff;
+    padding: 0.75rem 1rem;
 }
 
-button#clearMemoryBtn {
-    background-color: #7f1d1d !important;
-    border: 1px solid #b91c1c;
-    color: #fca5a5;
+.onboarding-routes button:hover {
+    border-color: #00ffcc;
+    background-color: #242b3a;
 }
 
-button#clearMemoryBtn:hover {
-    background-color: #991b1b !important;
+/* Navigační tlačítko zpět */
+#backToRoutesBtn {
+    background-color: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #94a3b8;
+    margin-top: 1rem;
+}
+
+#backToRoutesBtn:hover {
     color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.05);
 }
 
-/* EMERGENCY NOTIFICATIONS & FINAL LAYOUT */
-#txError, #action-zone {
-    display: none; 
-    background-color: #450a0a;
-    border: 1px solid #f87171;
+/* --- PRECIZNÍ STRUKTURA FORMULÁŘŮ --- */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0.85rem;
+}
+
+.form-group label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #00ffcc;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+}
+
+/* KONTRASTNÍ POZADÍ PRO PERFEKTNÍ VIDITELNOST ČERNÉHO OKA */
+.form-group input, 
+#currencySelect {
+    width: 100%;
+    background-color: #2d323f;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    padding: 0.6rem 0.85rem;
     border-radius: 4px;
-    color: #fca5a5;
-    padding: 1rem;
-    margin: 1rem 0;
-    font-family: 'Segoe UI', sans-serif;
+    font-size: 0.9rem;
+    transition: border-color 0.15s, background-color 0.15s;
+}
+
+.form-group input:focus, 
+#currencySelect:focus {
+    background-color: #343a4a;
+    border-color: #00ffcc;
+    outline: none;
+}
+
+.format-guide {
+    font-size: 0.78rem;
+    color: #64748b;
+    margin-top: 0.35rem;
+    line-height: 1.3;
+}
+
+/* --- SUBZÓNY ONBOARDINGU --- */
+#seed-create-subzone,
+#seed-import-subzone,
+#vault-setup-subzone {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+}
+
+#seed-create-subzone button,
+#seed-import-subzone button,
+#vault-setup-subzone button {
+    margin-top: 0.5rem;
+}
+/* --- NOVÉ SPOJENÉ KRYPTO KARTY (ASSETY) --- */
+.balances-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.currency-select-group {
+    margin-bottom: 1.25rem;
+}
+
+/* Hlavní obal karty pro každou kryptoměnu */
+.crypto-card {
+    background-color: #080a0f;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+    padding: 0.85rem 1.1rem;
+    margin-bottom: 0.75rem; /* Kompaktní, čistá mezera až ZA celou kartou */
+}
+
+/* Stylování jednotlivých řádků uvnitř jedné krypto karty */
+.crypto-row {
+    display: flex;
+    justify-content: space-between; /* Text vlevo, akce/odkazy vpravo */
+    align-items: center;
     font-size: 0.9rem;
 }
 
-div[id*="disclaimer"], div[id*="warning"], .disclaimer {
-    background-color: #1c1917; 
-    border-left: 4px solid #d97706; 
-    padding: 1rem;
-    color: #d6d3d1;
+/* Horní řádek karty (Adresa) */
+.address-row {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    padding-bottom: 0.4rem;
+    margin-bottom: 0.4rem; /* Těsné, přesné spojení se zůstatkem */
+}
+
+.address-row strong {
+    color: #00ffcc;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#btcAddress, #ethAddress {
+    color: #94a3b8;
+    font-family: monospace;
+    font-size: 0.85rem;       /* Mírně menší krypto písmo */
+    white-space: nowrap;      /* Vynutí zobrazení na jednom řádku */
+    overflow: hidden;
+    text-overflow: ellipsis;  /* Pokud je adresa obří, elegantně ji zkrátí třemi tečkami ... */
+    max-width: 220px;         /* Bezpečné maximum, aby karta držela tvar */
+}
+
+/* Spodní řádek karty (Zůstatek) */
+.balance-row {
+    padding-top: 0.1rem;
+}
+
+.crypto-amount {
+    font-weight: 700;
+    color: #ffffff;
+    font-size: 1rem;
+}
+
+.fiat-amount {
+    color: #64748b;
     font-size: 0.85rem;
+    margin-left: 0.35rem;
+    margin-right: auto; /* Posune odkaz na historii transakcí na pravý okraj */
+}
+
+/* Odkaz na transakční historii zarovnaný vpravo */
+.history-link {
+    font-size: 0.8rem;
+    color: #627EEA; /* Odstraněno hnusné !important */
+    text-decoration: none;
+    transition: color 0.15s;
+}
+
+.history-link:hover {
+    color: #00ffcc; /* Hover efekt bude nyní bezvadně fungovat */
+    text-decoration: underline;
+}
+
+/* Čistý oddělovač sekcí dashboardu - OPRAVENÉ NALEPENÍ SEKCE SEND TRANSACTION */
+#main-wallet-dashboard hr {
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    margin: 2rem 0 2rem 0; /* Symetricky a spolehlivě odtlačí nadpis transakcí */
+}
+
+/* --- AKČNÍ ZÓNA (KOMPAKTNÍ TRANSAKCE) --- */
+#action-zone .form-group {
+    margin-bottom: 0.75rem; /* Drastické smrštění velkých mezer u odesílání */
+}
+
+#txError {
+    color: #f87171;
+    font-size: 0.85rem;
+    margin-bottom: 0.75rem;
+}
+
+/* Skupina odesílacích a swapovacích tlačítek */
+.action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+#swapBtn {
+    background-color: transparent;
+    border: 1px solid #00ffcc;
+    color: #00ffcc;
+}
+
+#swapBtn:hover {
+    background-color: rgba(0, 255, 204, 0.08);
+}
+
+/* Přímé a definitivní odsunutí nadpisu Security od transakčních tlačítek */
+.security-management-zone h3 {
+    margin-top: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+/* --- BEZPEČNOST A ODHLÁŠENÍ (OPTION A / B) --- */
+.security-management-zone .section-desc {
+    margin-bottom: 1rem;
+}
+
+.vault-lock-box, 
+.destructive-logout-box {
+    background-color: #080a0f;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    padding: 1.1rem;
+    border-radius: 8px;
+    margin-bottom: 0.85rem;
+}
+
+.vault-lock-box strong, 
+.destructive-logout-box strong {
+    font-size: 0.9rem;
+    color: #ffffff;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.vault-lock-box p, 
+.destructive-logout-box p {
+    font-size: 0.82rem;
+    color: #64748b;
+    margin-bottom: 0.75rem;
+    line-height: 1.3;
+}
+
+.vault-lock-box .form-group {
+    margin-bottom: 0.5rem;
+}
+
+/* Bezpečné zacílení na hlavní široká tlačítka přes unikátní ID */
+#saveVaultBtn,
+#clearMemoryBtn {
+    width: 100%; 
+    margin-top: 0.25rem;
+}
+
+/* Nebezpečná zóna pro kompletní smazání */
+.destructive-logout-box {
+    border-color: rgba(239, 68, 68, 0.15);
+}
+
+.destructive-logout-box strong {
+    color: #f87171;
+}
+
+#clearMemoryBtn {
+    background-color: #ef4444;
+    color: #ffffff;
+}
+
+#clearMemoryBtn:hover {
+    background-color: #dc2626;
 }

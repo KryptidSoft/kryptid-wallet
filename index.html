@@ -1,131 +1,180 @@
 <!DOCTYPE html>
-<html lang="cs">
+<html lang="en">
 <head>
     <link rel="stylesheet" href="css/styles.css">
     <meta charset="UTF-8">
-    <!-- Finální produkční CSP hlavička umožňující provoz z disku i z GitHub Pages bez blokování skriptů -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://github.io; connect-src 'self' https://*.ankr.com https://ankr.com https://1inch.dev https://blockstream.info https://blockchain.info https://unpkg.com https://cryptocompare.com; script-src 'self' 'unsafe-inline' https://unpkg.com https://github.io;">
-    
     <title>Kryptid Wallet</title>
-    
-    <!-- Propojení vaší nové 512x512px PNG ikony pod jejím reálným názvem -->
     <link rel="icon" type="image/png" sizes="512x512" href="favicon.png">
     <link rel="apple-touch-icon" href="favicon.png">
 </head>
 <body>
 
-    <h1>Kryptid Wallet (Multi-Chain Edition)</h1>
-    <div>
+    <div class="wallet-branding">
+        <img src="favicon.png" alt="Kryptid Logo" class="wallet-small-logo">
+        <h1>Kryptid Wallet (Multi-Chain Edition)</h1>
+    </div>
+
+    <div class="disclaimer-box">
         <strong>DISCLAIMER:</strong> Use at your own risk. KryptidSoft is not responsible for any financial losses caused by losing your seed phrase, malware, or software bugs.
     </div>
     
-    <!-- Zone 1: Initialization and Vault -->
-    <div>
-        <h3>Key Management</h3>
+    <!-- ONBOARDING INITIALIZATION SCREEN -->
+    <div id="onboarding-screen">
+        <h2>Access Options</h2>
+        <p class="section-desc">Select how you want to initialize or unlock your client wallet infrastructure:</p>
         
-        <label for="seedInput">Enter 12 words or Private Key (Hex):</label><br>
-        <input type="password" id="seedInput" autocomplete="off" autocorrect="off" spellcheck="false"><br>
+        <div class="onboarding-routes">
+            <button id="routeCreateBtn">Create New BIP-39 Seed</button>
+            <button id="routeImportBtn">Import Existing Seed / Private Key</button>
+            <button id="routeVaultBtn">Decrypt Stored Vault Archive</button>
+        </div>
+
+        <div id="seed-create-subzone" style="display: none;">
+            <h3>Generate New Key</h3>
+            <p>Click the button below to instantly generate a secure, clean BIP-39 seed phrase in memory.</p>
+            <button id="generateBtn">Generate New BIP-39 Seed</button>
+        </div>
+
+        <div id="seed-import-subzone" style="display: none;">
+            <h3>Key Management</h3>
+            <div class="form-group">
+                <label for="seedInput">Enter 12 words or Private Key (Hex):</label>
+                <input type="password" id="seedInput" autocomplete="off" autocorrect="off" spellcheck="false">
+                <span class="format-guide">Format Guide: Type words in lowercase, use English, separate with a single space. No dashes, commas or numbers.</span>
+            </div>
+            <button id="loadWalletBtn">Load from RAM</button>
+        </div>
+
+        <div id="vault-setup-subzone" style="display: none;">
+            <h3>Vault Authentication</h3>
+            <p>Enter your Master Password to decrypt your keys directly into memory.</p>
+            <div class="form-group">
+                <label for="masterPasswordUnlock">Master Password:</label>
+                <input type="password" id="masterPasswordUnlock" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Enter password to unlock...">
+            </div>
+            <button id="loadVaultBtn">Decrypt and Login</button>
+        </div>
         
-        <!-- Nápověda k formátu umístěná ihned pod polem -->
-        <span>Format Guide: Type words in lowercase, use English, separate with a single space. No dashes, commas or numbers.</span><br><br>
-        
-        <!-- Hlavní aktivační tlačítka pro RAM -->
-        <button id="loadWalletBtn">Load from RAM</button>
-        <button id="generateBtn">Generate New BIP-39 Seed</button>
-        <br><br>
-        
-        <!-- Vstup pro heslo a jeho dvě příslušná tlačítka pod ním -->
-        <label for="masterPassword">Master Password (for vault encryption):</label><br>
-        <input type="password" id="masterPassword" autocomplete="off" autocorrect="off" spellcheck="false"><br><br>
-        
-        <button id="saveVaultBtn">Encrypt and Save to Storage</button>
-        <button id="loadVaultBtn">Decrypt from Storage</button>
+        <button id="backToRoutesBtn" style="display: none;">← Back to Options</button>
     </div>
 
-    <!-- SKRYTÝ SYSTÉMOVÝ ENGINE: Prvek v HTML reálně existuje, tvůj JS k němu má přístup, 
-         ale díky šabloně se vůbec nevykreslí na obrazovku a nikoho nestraší -->
     <template>
         <input type="password" id="oneInchKey" autocomplete="off" value="1inch-api-key-here">
     </template>
+    <!-- MAIN WALLET DASHBOARD -->
+    <div id="main-wallet-dashboard" style="display: none;">
+        <div class="balances-section">
+            <h3>Your Addresses & Balances</h3>
+            <div class="form-group currency-select-group">
+                <label for="currencySelect">Display Value In:</label>
+                <select id="currencySelect">
+                    <option value="USD">USD ($) - US Dollar</option>
+                    <option value="XAU">GOLD (oz) - Physical Gold Ounce</option>
+                    <option value="BRL">BRL (R$) - Brazilian Real</option>
+                    <option value="CAD">CAD ($) - Canadian Dollar</option>
+                    <option value="CNY">CNY (¥) - Chinese Yuan</option>
+                    <option value="CZK">CZK (Kč) - Czech Koruna</option>
+                    <option value="EUR">EUR (€) - Euro</option>
+                    <option value="GBP">GBP (£) - British Pound</option>
+                    <option value="CHF">CHF (CHF) - Swiss Franc</option>
+                    <option value="INR">INR (Format) - Indian Rupee</option>
+                    <option value="IRR">IRR (﷼) - Iranian Rial</option>
+                    <option value="JPY">JPY (¥) - Japanese Yen</option>
+                    <option value="PLN">PLN (zł) - Polish Zloty</option>
+                    <option value="RUB">RUB (₽) - Russian Ruble</option>
+                    <option value="TRY">TRY (₺) - Turkish Lira</option>
+                </select>
+            </div>
 
-    <hr>
+            <!-- BITCOIN KARTA -->
+            <div class="crypto-card btc-card">
+                <div class="crypto-row address-row">
+                    <strong>Bitcoin Address:</strong>
+                    <span id="btcAddress">---</span>
+                </div>
+                <div class="crypto-row balance-row">
+                    <span id="btcBalance" class="crypto-amount">0.00000000 BTC</span>
+                    <span id="btcFiat" class="fiat-amount">(0.00 USD)</span>
+                    <span id="btcHistoryLink" class="history-link">Transaction History</span>
+                </div>
+            </div>
 
-    <!-- Zone 2: Addresses & Balances Display (Bitcoin row first, Alphabetical select) -->
-    <div>
-        <h3>Your Addresses & Balances</h3>
-        
-        <label for="currencySelect">Display Value In:</label>
-        <select id="currencySelect">
-            <!-- Main global pillars at the absolute top -->
-            <option value="USD">USD ($) - US Dollar</option>
-            <option value="XAU">GOLD (oz) - Physical Gold Ounce</option>
+            <!-- ETHEREUM KARTA -->
+            <div class="crypto-card eth-card">
+                <div class="crypto-row address-row">
+                    <strong>Ethereum Address:</strong>
+                    <span id="ethAddress">---</span>
+                </div>
+                <div class="crypto-row balance-row">
+                    <span id="ethBalance" class="crypto-amount">0.0000 ETH</span>
+                    <span id="ethFiat" class="fiat-amount">(0.00 USD)</span>
+                    <span id="ethHistoryLink" class="history-link">Transaction History</span>
+                </div>
+            </div>
             
-            <!-- Other world currencies sorted precisely in alphabetical order -->
-            <option value="BRL">BRL (R$) - Brazilian Real</option>
-            <option value="CAD">CAD ($) - Canadian Dollar</option>
-            <option value="CNY">CNY (¥) - Chinese Yuan</option>
-            <option value="CZK">CZK (Kč) - Czech Koruna</option>
-            <option value="EUR">EUR (€) - Euro</option>
-            <option value="GBP">GBP (£) - British Pound</option>
-            <option value="CHF">CHF (CHF) - Swiss Franc</option>
-            <option value="INR">INR (₹) - Indian Rupee</option>
-            <option value="IRR">IRR (﷼) - Iranian Rial</option>
-            <option value="JPY">JPY (¥) - Japanese Yen</option>
-            <option value="PLN">PLN (zł) - Polish Zloty</option>
-            <option value="RUB">RUB (₽) - Russian Ruble</option>
-            <option value="TRY">TRY (₺) - Turkish Lira</option>
-        </select>
-        <br><br>
+            <div id="dynamicTokensContainer"></div>
+        </div>
 
-        <p><strong>Bitcoin Address:</strong> <span id="btcAddress">---</span></p>
-        <p><strong>Bitcoin Balance:</strong> <span id="btcBalance">0.00000000 BTC</span> <span id="btcFiat">(0.00 USD)</span> | <span id="btcHistoryLink">Transaction History</span></p>
-        <br>
-        <p><strong>Ethereum Address:</strong> <span id="ethAddress">---</span></p>
-        <p><strong>Ethereum Balance:</strong> <span id="ethBalance">0.0000 ETH</span> <span id="ethFiat">(0.00 USD)</span> | <span id="ethHistoryLink">Transaction History</span></p>
-        
-        <div id="dynamicTokensContainer"></div>
+        <div id="action-zone">
+            <h3>Send Transaction / Client Swap</h3>
+            
+            <div class="form-group">
+                <label for="txTarget">Destination Address:</label>
+                <input type="text" id="txTarget" placeholder="0x... or bc1...">
+            </div>
+
+            <div class="form-group">
+                <label for="txAmount">Amount:</label>
+                <input type="number" id="txAmount" step="any" placeholder="0.00">
+            </div>
+            
+            <div id="txError"></div>
+            
+            <div class="action-buttons">
+                <button id="sendBtcBtn">Send BTC</button>
+                <button id="sendEthBtn">Send ETH</button>
+                <button id="swapBtn">Swap Tokens (0.2% fee)</button>
+            </div>
+        </div>
+
+        <!-- SECURITY TERMINATION ZONE -->
+        <div class="security-management-zone">
+            <h3>Security & Session Management</h3>
+            <p class="section-desc">Choose how you want to close your wallet session. You can lock it with a password for quick return, or wipe everything from this machine.</p>
+            
+            <!-- OPTION A BOX -->
+            <div class="vault-lock-box">
+                <strong>Option A: Lock Wallet (Create Password for Next Login)</strong>
+                <p>Encrypt your keys into this browser's storage so you can log in next time using just a password instead of your seed phrase.</p>
+                <div class="form-group">
+                    <label for="masterPassword">Set Master Password:</label>
+                    <input type="password" id="masterPassword" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Enter password to lock wallet...">
+                </div>
+                <button id="saveVaultBtn">Lock and Save to Browser</button>
+            </div>
+
+            <!-- OPTION B BOX -->
+            <div class="destructive-logout-box">
+                <strong>Option B: Destructive Logout (Wipe RAM & Cache)</strong>
+                <p>Emergency termination. Immediately clears everything from computer memory. Next time you will have to enter your 12-word seed phrase again.</p>
+                <button id="clearMemoryBtn">Wipe RAM and Logout</button>
+            </div>
+        </div>
 
     </div>
 
-    <hr>
-
-    <!-- Zone 3: Transactions and Swap -->
-    <div id="action-zone">
-        <h3>Send Transaction / Client Swap</h3>
-        <label for="txTarget">Destination Address:</label><br>
-        <input type="text" id="txTarget" placeholder="0x... or bc1..."><br>
-        <label for="txAmount">Amount:</label><br>
-        <input type="number" id="txAmount" step="any" placeholder="0.00"><br><br>
-        
-        <!-- Target container for client-side red error validation messages -->
-        <div id="txError"></div>
-        
-        <!-- Tlačítka s čistými názvy bez matoucích zkratek v závorkách -->
-        <button id="sendEthBtn">Send ETH</button>
-        <button id="sendBtcBtn">Send BTC</button>
-        <button id="swapBtn">Swap Tokens (0.2% fee)</button>
-    </div>
-
-    <hr>
-
-    <!-- Tlačítko odhlášení je samostatně na úplném konci, bez hnusných zdvojených čar -->
-    <div>
-        <h3>Security Termination</h3>
-        <p>Wipe all temporary variables from memory and immediately lock the localized wallet infrastructure.</p>
-        <button id="clearMemoryBtn">Wipe RAM and Logout</button>
-    </div>
-
-
-    <!-- Loading vendor libraries downloaded via PowerShell -->
+    <!-- Vendor Packages via PowerShell bootstrap -->
     <script src="js/vendor/crypto-js.min.js"></script>
     <script src="js/vendor/ethers.umd.min.js"></script>
     <script src="js/vendor/secp256k1.min.js"></script>
     <script src="js/vendor/bitcoin.min.js"></script>
     
-    <!-- Application architectural layers -->
+    <!-- Architectural Execution Layers -->
     <script src="js/security.js"></script>
-    <script src="js/crypto-vault.js"></script>
+    <script src="js/bitcoin-vault.js"></script>
     <script src="js/blockchain.js"></script>
+    <script src="js/wallet-engine.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

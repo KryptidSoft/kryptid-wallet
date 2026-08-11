@@ -1,4 +1,4 @@
-const KryptidBitcoinEngine = {
+﻿const KryptidBitcoinEngine = {
     async sendTransaction(privateKeyHex, fromAddress, targetAddress, amountSats) {
         if (!privateKeyHex || !fromAddress || !targetAddress || amountSats <= 0) {
             throw new Error("Invalid parameters passed to KryptidBitcoinEngine.");
