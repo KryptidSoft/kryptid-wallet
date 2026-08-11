@@ -12,7 +12,7 @@
 
     <div class="wallet-branding">
         <img src="favicon.png" alt="Kryptid Logo" class="wallet-small-logo">
-        <h1>Kryptid Wallet (Multi-Chain Edition)</h1>
+        <h1>Kryptid Wallet</h1>
     </div>
 
     <div class="disclaimer-box">
@@ -21,42 +21,42 @@
     
     <!-- ONBOARDING INITIALIZATION SCREEN -->
     <div id="onboarding-screen">
-        <h2>Access Options</h2>
-        <p class="section-desc">Select how you want to initialize or unlock your client wallet infrastructure:</p>
+        <h2>Welcome</h2>
+        <p class="section-desc">Choose how you want to open your wallet:</p>
         
         <div class="onboarding-routes">
-            <button id="routeCreateBtn">Create New BIP-39 Seed</button>
-            <button id="routeImportBtn">Import Existing Seed / Private Key</button>
-            <button id="routeVaultBtn">Decrypt Stored Vault Archive</button>
+            <button id="routeCreateBtn">Create a New Wallet</button>
+            <button id="routeImportBtn">Import Existing Wallet</button>
+            <button id="routeVaultBtn">Unlock with Password</button>
         </div>
 
         <div id="seed-create-subzone" style="display: none;">
-            <h3>Generate New Key</h3>
-            <p>Click the button below to instantly generate a secure, clean BIP-39 seed phrase in memory.</p>
-            <button id="generateBtn">Generate New BIP-39 Seed</button>
+            <h3>Create a New Wallet</h3>
+            <p>Click below to generate your unique 12-word seed phrase. Write it down carefully on paper!</p>
+            <button id="generateBtn">Generate Seed Phrase</button>
         </div>
 
         <div id="seed-import-subzone" style="display: none;">
-            <h3>Key Management</h3>
+            <h3>Enter Your Recovery Details</h3>
             <div class="form-group">
-                <label for="seedInput">Enter 12 words or Private Key (Hex):</label>
+                <label for="seedInput">Enter your 12 words or Private Key:</label>
                 <input type="password" id="seedInput" autocomplete="off" autocorrect="off" spellcheck="false">
-                <span class="format-guide">Format Guide: Type words in lowercase, use English, separate with a single space. No dashes, commas or numbers.</span>
+                <span class="format-guide">Tip: Type your words in lowercase, separated by a single space. Do not use commas, numbers, or dashes.</span>
             </div>
-            <button id="loadWalletBtn">Load from RAM</button>
+            <button id="loadWalletBtn">Open Wallet</button>
         </div>
 
         <div id="vault-setup-subzone" style="display: none;">
-            <h3>Vault Authentication</h3>
-            <p>Enter your Master Password to decrypt your keys directly into memory.</p>
+            <h3>Unlock Your Wallet</h3>
+            <p>Enter your password to access your funds.</p>
             <div class="form-group">
-                <label for="masterPasswordUnlock">Master Password:</label>
+                <label for="masterPasswordUnlock">Password:</label>
                 <input type="password" id="masterPasswordUnlock" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Enter password to unlock...">
             </div>
-            <button id="loadVaultBtn">Decrypt and Login</button>
+            <button id="loadVaultBtn">Login</button>
         </div>
         
-        <button id="backToRoutesBtn" style="display: none;">← Back to Options</button>
+        <button id="backToRoutesBtn" style="display: none;">← Back</button>
     </div>
 
     <template>
@@ -117,10 +117,10 @@
         </div>
 
         <div id="action-zone">
-            <h3>Send Transaction / Client Swap</h3>
+            <h3>Send Transaction / Swap</h3>
             
             <div class="form-group">
-                <label for="txTarget">Destination Address:</label>
+                <label for="txTarget">Recipient's Address:</label>
                 <input type="text" id="txTarget" placeholder="0x... or bc1...">
             </div>
 
@@ -141,12 +141,12 @@
         <!-- SECURITY TERMINATION ZONE -->
         <div class="security-management-zone">
             <h3>Security & Session Management</h3>
-            <p class="section-desc">Choose how you want to close your wallet session. You can lock it with a password for quick return, or wipe everything from this machine.</p>
+            <p class="section-desc">Choose how you want to close your current wallet session. You can temporarily lock it for a quick return, or completely wipe all sensitive data from this machine.</p>
             
             <!-- OPTION A BOX -->
             <div class="vault-lock-box">
                 <strong>Option A: Lock Wallet (Create Password for Next Login)</strong>
-                <p>Encrypt your keys into this browser's storage so you can log in next time using just a password instead of your seed phrase.</p>
+                <p>This encrypts your keys into this browser's local storage. On your next visit, you can log in quickly using just your Master Password instead of typing your 12-word seed phrase again.</p>
                 <div class="form-group">
                     <label for="masterPassword">Set Master Password:</label>
                     <input type="password" id="masterPassword" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Enter password to lock wallet...">
@@ -156,8 +156,8 @@
 
             <!-- OPTION B BOX -->
             <div class="destructive-logout-box">
-                <strong>Option B: Destructive Logout (Wipe RAM & Cache)</strong>
-                <p>Emergency termination. Immediately clears everything from computer memory. Next time you will have to enter your 12-word seed phrase again.</p>
+                <strong>Option B: Destructive Logout (Wipe RAM & Local Storage)</strong>
+                <p>Emergency termination. This completely erases your private keys from the computer's memory and browser cache. <strong>WARNING:</strong> You will absolutely need your 12-word seed phrase to access this wallet next time.</p>
                 <button id="clearMemoryBtn">Wipe RAM and Logout</button>
             </div>
         </div>

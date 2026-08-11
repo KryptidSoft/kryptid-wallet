@@ -171,7 +171,7 @@
         if (!WalletEngine.validateBitcoinTx(target, amountStr)) return;
 
         const amountSats = Math.round(parseFloat(amountStr) * 100000000);
-        const fromAddress = document.getElementById('btcAddress').innerText;
+        const fromAddress = document.getElementById('btcAddress').textContent;
 
         console.log("[Kryptid] UTXO parameters validated. Initializing localized secp256k1 cryptographic engine...");
         try {
@@ -214,7 +214,7 @@
             btn.innerText = '[copy]';
             
             btn.addEventListener('click', (e) => {
-                const txt = el.innerText;
+                const txt = el.textContent;
                 if (txt && txt !== "---") {
                     navigator.clipboard.writeText(txt).then(() => {
                         e.target.innerText = "[copied]";
