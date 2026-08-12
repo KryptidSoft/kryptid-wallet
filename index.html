@@ -87,8 +87,9 @@
                 </select>
             </div>
 
-            <!-- BITCOIN KARTA -->
-            <div class="crypto-card btc-card">
+            <!-- DYNAMICKÉ KARTY PRO VŠECHNY POŽADOVANÉ MINCE -->
+            <!-- Třída 'active-card' se přiřadí JavaScriptem vybrané minci -->
+            <div class="crypto-card active-card" data-coin="BTC">
                 <div class="crypto-row address-row">
                     <strong>Bitcoin Address:</strong>
                     <span id="btcAddress">---</span>
@@ -100,8 +101,7 @@
                 </div>
             </div>
 
-            <!-- ETHEREUM KARTA -->
-            <div class="crypto-card eth-card">
+            <div class="crypto-card" data-coin="ETH">
                 <div class="crypto-row address-row">
                     <strong>Ethereum Address:</strong>
                     <span id="ethAddress">---</span>
@@ -112,16 +112,66 @@
                     <span id="ethHistoryLink" class="history-link">Transaction History</span>
                 </div>
             </div>
+
+            <div class="crypto-card" data-coin="LTC">
+                <div class="crypto-row address-row">
+                    <strong>Litecoin Address:</strong>
+                    <span id="ltcAddress">---</span>
+                </div>
+                <div class="crypto-row balance-row">
+                    <span id="ltcBalance" class="crypto-amount">0.00000000 LTC</span>
+                    <span id="ltcFiat" class="fiat-amount">(0.00 USD)</span>
+                    <span id="ltcHistoryLink" class="history-link">Transaction History</span>
+                </div>
+            </div>
+
+            <div class="crypto-card" data-coin="DOGE">
+                <div class="crypto-row address-row">
+                    <strong>Dogecoin Address:</strong>
+                    <span id="dogeAddress">---</span>
+                </div>
+                <div class="crypto-row balance-row">
+                    <span id="dogeBalance" class="crypto-amount">0.0000 DOGE</span>
+                    <span id="dogeFiat" class="fiat-amount">(0.00 USD)</span>
+                    <span id="dogeHistoryLink" class="history-link">Transaction History</span>
+                </div>
+            </div>
+
+            <div class="crypto-card" data-coin="BNB">
+                <div class="crypto-row address-row">
+                    <strong>Binance Coin Address:</strong>
+                    <span id="bnbAddress">---</span>
+                </div>
+                <div class="crypto-row balance-row">
+                    <span id="bnbBalance" class="crypto-amount">0.0000 BNB</span>
+                    <span id="bnbFiat" class="fiat-amount">(0.00 USD)</span>
+                    <span id="bnbHistoryLink" class="history-link">Transaction History</span>
+                </div>
+            </div>
+
+            <div class="crypto-card" data-coin="TRX">
+                <div class="crypto-row address-row">
+                    <strong>TRON Address:</strong>
+                    <span id="trxAddress">---</span>
+                </div>
+                <div class="crypto-row balance-row">
+                    <span id="trxBalance" class="crypto-amount">0.0000 TRX</span>
+                    <span id="trxFiat" class="fiat-amount">(0.00 USD)</span>
+                    <span id="trxHistoryLink" class="history-link">Transaction History</span>
+                </div>
+            </div>
             
+            <!-- Kontejner pro ERC-20 / BEP-20 tokeny načtené přes 1inch API -->
             <div id="dynamicTokensContainer"></div>
         </div>
 
+        <!-- UNIVERZÁLNÍ AKČNÍ ZÓNA PRO VŠECHNY RODINY MINCÍ -->
         <div id="action-zone">
-            <h3>Send Transaction / Swap</h3>
+            <h3 id="actionZoneTitle">Send Transaction / Swap (BTC)</h3>
             
             <div class="form-group">
                 <label for="txTarget">Recipient's Address:</label>
-                <input type="text" id="txTarget" placeholder="0x... or bc1...">
+                <input type="text" id="txTarget" placeholder="Enter recipient address...">
             </div>
 
             <div class="form-group">
@@ -132,8 +182,9 @@
             <div id="txError"></div>
             
             <div class="action-buttons">
-                <button id="sendBtcBtn">Send BTC</button>
-                <button id="sendEthBtn">Send ETH</button>
+                <!-- Jediné univerzální tlačítko, které odbaví všechny sítě -->
+                <button id="universalSendBtn">Send BTC</button>
+                <!-- Swap se zobrazí nebo aktivuje pouze u EVM rodiny (ETH, BNB) -->
                 <button id="swapBtn">Swap Tokens (0.2% fee)</button>
             </div>
         </div>
@@ -143,7 +194,6 @@
             <h3>Security & Session Management</h3>
             <p class="section-desc">Choose how you want to close your current wallet session. You can temporarily lock it for a quick return, or completely wipe all sensitive data from this machine.</p>
             
-            <!-- OPTION A BOX -->
             <div class="vault-lock-box">
                 <strong>Option A: Lock Wallet (Create Password for Next Login)</strong>
                 <p>This encrypts your keys into this browser's local storage. On your next visit, you can log in quickly using just your Master Password instead of typing your 12-word seed phrase again.</p>
@@ -154,7 +204,6 @@
                 <button id="saveVaultBtn">Lock and Save to Browser</button>
             </div>
 
-            <!-- OPTION B BOX -->
             <div class="destructive-logout-box">
                 <strong>Option B: Destructive Logout (Wipe RAM & Local Storage)</strong>
                 <p>Emergency termination. This completely erases your private keys from the computer's memory and browser cache. <strong>WARNING:</strong> You will absolutely need your 12-word seed phrase to access this wallet next time.</p>
@@ -164,13 +213,16 @@
 
     </div>
 
-    <!-- Vendor Packages via PowerShell bootstrap -->
+    <!-- Lokální knihovny ve složce vendor -->
     <script src="js/vendor/crypto-js.min.js"></script>
     <script src="js/vendor/ethers.umd.min.js"></script>
     <script src="js/vendor/secp256k1.min.js"></script>
     <script src="js/vendor/bitcoin.min.js"></script>
     
-    <!-- Architectural Execution Layers -->
+    <!-- Pro budoucí rozšíření o TRON rodinu stačí odkomentovat lokální knihovnu -->
+    <!-- <script src="js/vendor/tronweb.js"></script> -->
+    
+    <!-- Architektonické vrstvy aplikace -->
     <script src="js/security.js"></script>
     <script src="js/bitcoin-vault.js"></script>
     <script src="js/blockchain.js"></script>

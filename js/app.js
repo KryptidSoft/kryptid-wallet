@@ -1,5 +1,10 @@
 ﻿document.addEventListener('DOMContentLoaded', () => {
     
+    // GLOBÁLNÍ STAV PENĚŽENKY (Data-Driven State)
+    if (!window.WalletState) {
+        window.WalletState = { activeCoin: 'BTC' };
+    }
+
     // UI NAVIGATION ELEMENTS
     const onboardingScreen = document.getElementById('onboarding-screen');
     const mainDashboard = document.getElementById('main-wallet-dashboard');
@@ -57,23 +62,46 @@
         const validatedSeed = await WalletEngine.validateSeedPhrase(val);
         if (!validatedSeed) return;
 
+        // Inicializace objektu pro privátní klíče, pokud neexistuje
+        if (!_secureState.privateKeys) {
+            _secureState.privateKeys = {};
+        }
+
         const accounts = CryptoVault.deriveKeys(validatedSeed);
-        document.getElementById('ethAddress').innerText = accounts.ethAddress;
-        document.getElementById('btcAddress').innerText = accounts.btcAddress;
         
-        // Funkční block explorery se správnými cesty a lomítky
-        const btcLink = document.getElementById('btcHistoryLink');
-        const ethLink = document.getElementById('ethHistoryLink');
+        // DYNAMICKÉ MAPOVÁNÍ ADRES A BLOCK EXPLORERŮ (Žádný hardcoding)
+        Object.keys(accounts.addresses).forEach(coin => {
+            const coinLower = coin.toLowerCase();
+            
+            // Automaticky najde a vyplní element adresy (např. btcAddress, ltcAddress...)
+            const addressElement = document.getElementById(`${coinLower}Address`);
+            if (addressElement) {
+                addressElement.innerText = accounts.addresses[coin];
+            }
+            
+            // Automaticky naváže správný block explorer ze síťového registru
+            const linkElement = document.getElementById(`${coinLower}HistoryLink`);
+            if (linkElement && KryptidNetworkRegistry[coin]) {
+                linkElement.onclick = () => { 
+                    const baseUrl = coin === 'BTC' || coin === 'LTC' || coin === 'DOGE'
+                        ? `https://${KryptidNetworkRegistry[coin].explorer}/address/`
+                        : `https://${coin === 'ETH' ? 'etherscan.io' : 'bscscan.com'}/address/`;
+                    window.open(baseUrl + accounts.addresses[coin], "_blank"); 
+                };
+            }
+            
+            // Bezpečné uložení privátního klíče do izolovaného stavu RAM
+            if (accounts.privateKeys[coin]) {
+                _secureState.privateKeys[coin] = accounts.privateKeys[coin];
+            }
+        });
         
-        if (btcLink) {
-            btcLink.onclick = () => { window.open("https://blockstream.info" + accounts.btcAddress, "_blank"); };
+        // Zpětná kompatibilita pro starší moduly, které hledají btcPrivateKey přímo v kořeni
+        if (accounts.privateKeys['BTC']) {
+            _secureState.btcPrivateKey = accounts.privateKeys['BTC'];
         }
-        if (ethLink) {
-            ethLink.onclick = () => { window.open("https://etherscan.io" + accounts.ethAddress, "_blank"); };
-        }
-        
-        if (accounts.btcPrivateKey) {
-            _secureState.btcPrivateKey = accounts.btcPrivateKey;
+        if (accounts.privateKeys['ETH']) {
+            _secureState.ethPrivateKey = accounts.privateKeys['ETH'];
         }
         
         onboardingScreen.style.display = 'none';
@@ -81,8 +109,10 @@
         document.getElementById('action-zone').style.display = 'block';
         clearTxError();
 
+        // Spuštění univerzálního agregátoru zůstatků a cen
         await BlockchainService.fetchAndDisplayBalances();
     });
+
     // Button: Option A - Encrypt local client cache using the user-defined master password
     document.getElementById('saveVaultBtn').addEventListener('click', () => {
         const password = document.getElementById('masterPassword').value;
@@ -90,9 +120,9 @@
         
         CryptoVault.encryptAndSave(password);
         
-        // Complete state lockdown
+        // Complete state lockdown & memory wipe
         CryptoVault.zeroingMemory();
-        _secureState = { seedPhrase: null, ethPrivateKey: null, btcPrivateKey: null };
+        _secureState = { seedPhrase: null, ethPrivateKey: null, btcPrivateKey: null, privateKeys: {} };
         document.getElementById('seedInput').value = '';
         document.getElementById('masterPassword').value = '';
         
@@ -119,21 +149,20 @@
             document.getElementById('masterPasswordUnlock').value = '';
         }
     });
-
-    // Button: Option B - Destructive Logout (Wipe RAM & Cache completely)
+    // Button: Option B - Destructive Logout (Plně dynamické promazání RAM a UI cache)
     document.getElementById('clearMemoryBtn').addEventListener('click', () => {
         CryptoVault.zeroingMemory();
-        _secureState = { seedPhrase: null, ethPrivateKey: null, btcPrivateKey: null };
         
-        document.getElementById('ethAddress').innerText = '---';
-        document.getElementById('btcAddress').innerText = '---';
-        document.getElementById('btcBalance').innerText = '0.00000000 BTC';
-        document.getElementById('ethBalance').innerText = '0.0000 ETH';
+        // Vyčištění všech privátních klíčů najednou napříč všemi rodinami
+        _secureState = { seedPhrase: null, ethPrivateKey: null, btcPrivateKey: null, privateKeys: {} };
         
-        const currencySelect = document.getElementById('currencySelect');
-        const activeTicker = currencySelect ? currencySelect.value : "USD";
-        document.getElementById('btcFiat').innerText = `(0.00 ${activeTicker})`;
-        document.getElementById('ethFiat').innerText = `(0.00 ${activeTicker})`;
+        // Dynamicky najde všechny elementy adres, zůstatků a fiat hodnot a bezpečně je resetuje
+        document.querySelectorAll('[id$="Address"]').forEach(el => el.innerText = '---');
+        document.querySelectorAll('[id$="Balance"]').forEach(el => {
+            const coin = el.id.replace('Balance', '').toUpperCase();
+            el.innerText = coin === 'BTC' || coin === 'LTC' ? `0.00000000 ${coin}` : `0.0000 ${coin}`;
+        });
+        document.querySelectorAll('[id$="Fiat"]').forEach(el => el.innerText = '(0.00 USD)');
         
         document.getElementById('seedInput').value = '';
         document.getElementById('masterPasswordUnlock').value = '';
@@ -150,39 +179,94 @@
         alert("Session terminated. RAM and volatile states have been securely wiped.");
     });
 
-    // Button: Executes Ethereum mainnet transaction with validation layer
-    document.getElementById('sendEthBtn').addEventListener('click', () => {
-        clearTxError();
-        const target = document.getElementById('txTarget').value.trim();
-        const amount = document.getElementById('txAmount').value.trim();
-        
-        if (!WalletEngine.validateEthereumTx(target, amount)) return;
+    // JEDINÉ UNIVERZÁLNÍ TLAČÍTKO PRO ODESÍLÁNÍ JAKÉKOLI MINCE
+    const universalSendBtn = document.getElementById('universalSendBtn');
+    if (universalSendBtn) {
+        universalSendBtn.addEventListener('click', async () => {
+            clearTxError();
+            
+            const currentCoin = window.WalletState.activeCoin; // Zjistí, zda posíláme BTC, ETH, LTC, DOGE, BNB, TRX
+            const target = document.getElementById('txTarget').value.trim();
+            const amountStr = document.getElementById('txAmount').value.trim();
+            
+            const addrElement = document.getElementById(`${currentCoin.toLowerCase()}Address`);
+            const fromAddress = addrElement ? addrElement.textContent.trim() : "";
+            
+            // Získání privátního klíče z chráněného pole privátních klíčů v RAM
+            const privateKey = _secureState.privateKeys ? _secureState.privateKeys[currentCoin] : null;
 
-        console.log("[Kryptid] EVM parameters validated. Passing execution sequence to Ankr Mainnet RPC node...");
-        BlockchainService.sendEthereumTx(target, amount);
+            // 1. Spuštění jednotné validace z wallet-engine.js podle typu rodiny/mince
+            if (window.WalletEngine && typeof window.WalletEngine.validateTx === 'function') {
+                if (!WalletEngine.validateTx(currentCoin, target, amountStr)) return;
+            } else {
+                // Zpětná kompatibilita pro původní samostatné validační funkce
+                if (currentCoin === 'BTC' && !WalletEngine.validateBitcoinTx(target, amountStr)) return;
+                if (currentCoin === 'ETH' && !WalletEngine.validateEthereumTx(target, amountStr)) return;
+            }
+
+            console.log(`[Kryptid] Initializing validation & signing sequence for ${currentCoin}...`);
+
+            try {
+                // 2. Předání řízení do BlockchainService, která si sama vybere správný engine
+                await BlockchainService.sendTransaction(currentCoin, privateKey, fromAddress, target, amountStr);
+                
+                // Vyčištění polí formuláře po úspěšném odeslání
+                document.getElementById('txTarget').value = '';
+                document.getElementById('txAmount').value = '';
+                alert(`${currentCoin} transaction signed and broadcasted successfully.`);
+            } catch (err) {
+                showTxError(`Broadcast Error: ${err.message}`);
+            }
+        });
+    }
+
+    // REAKTIVNÍ OŽIVENÍ KLIKÁNÍ NA KARTY MINCÍ V DASHBOARDU (S UX OPRAVOU)
+    document.querySelectorAll('.crypto-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            // BEZPEČNOSTNÍ POJISTKA: Pokud uživatel kliknul na tlačítko [copy], chceme POUZE zkopírovat adresu.
+            // Nechceme přepínat aktivní formulář ani čistit rozepsaná pole.
+            if (e.target.classList.contains('copy-trigger')) {
+                return; 
+            }
+
+            // 1. Odstranit aktivní vizuální zvýraznění ze všech karet a přidat ho na kliknutou
+            document.querySelectorAll('.crypto-card').forEach(c => c.classList.remove('active-card'));
+            card.classList.add('active-card');
+            
+            // 2. Aktualizovat globální stav peněženky
+            const selectedCoin = card.getAttribute('data-coin');
+            window.WalletState.activeCoin = selectedCoin;
+            
+            // 3. Dynamicky transformovat texty v odesílacím formuláři
+            document.getElementById('actionZoneTitle').innerText = `Send Transaction / Swap (${selectedCoin})`;
+            document.getElementById('universalSendBtn').innerText = `Send ${selectedCoin}`;
+            
+            // 4. DYNAMICKÝ UX PLACEHOLDER: Napoví uživateli, jaký formát adresy má vložit
+            const txTargetInput = document.getElementById('txTarget');
+            if (txTargetInput) {
+                if (selectedCoin === 'BTC') txTargetInput.setAttribute('placeholder', 'Vložte cílovou Bitcoin adresu (bc1...)');
+                else if (selectedCoin === 'LTC') txTargetInput.setAttribute('placeholder', 'Vložte cílovou Litecoin adresu (ltc1, L, M...)');
+                else if (selectedCoin === 'DOGE') txTargetInput.setAttribute('placeholder', 'Vložte cílovou Dogecoin adresu (D...)');
+                else if (selectedCoin === 'ETH') txTargetInput.setAttribute('placeholder', 'Vložte cílovou Ethereum adresu (0x...)');
+                else if (selectedCoin === 'BNB') txTargetInput.setAttribute('placeholder', 'Vložte cílovou Binance Smart Chain adresu (0x...)');
+                else if (selectedCoin === 'TRX') txTargetInput.setAttribute('placeholder', 'Vložte cílovou TRON adresu (T...)');
+            }
+            
+            // 5. Inteligentní zobrazení 1inch swapu (Swap dává smysl pouze pro EVM rodinu - ETH, BNB)
+            const swapBtn = document.getElementById('swapBtn');
+            if (swapBtn) {
+                const isEVM = (selectedCoin === 'ETH' || selectedCoin === 'BNB');
+                swapBtn.style.display = isEVM ? 'inline-block' : 'none';
+            }
+            
+            // Vyčistit předchozí vstupy a chybové hlášky
+            document.getElementById('txTarget').value = '';
+            document.getElementById('txAmount').value = '';
+            clearTxError();
+        });
     });
 
-    // Button: Signs and executes a Bitcoin transaction locally via secp256k1
-    document.getElementById('sendBtcBtn').addEventListener('click', async () => {
-        clearTxError();
-        const target = document.getElementById('txTarget').value.trim();
-        const amountStr = document.getElementById('txAmount').value.trim();
-        
-        if (!WalletEngine.validateBitcoinTx(target, amountStr)) return;
-
-        const amountSats = Math.round(parseFloat(amountStr) * 100000000);
-        const fromAddress = document.getElementById('btcAddress').textContent;
-
-        console.log("[Kryptid] UTXO parameters validated. Initializing localized secp256k1 cryptographic engine...");
-        try {
-            await KryptidBitcoinEngine.sendTransaction(_secureState.btcPrivateKey, fromAddress, target, amountSats);
-            alert("Bitcoin transaction signed and broadcasted successfully.");
-        } catch (err) {
-            showTxError(`Broadcast Error: ${err.message}`);
-        }
-    });
-
-    // Button: Routes parameters to 1inch aggregator V6 portal
+    // Button: Routes parameters to 1inch aggregator V6 portal (Zůstává zachován pro EVM)
     document.getElementById('swapBtn').addEventListener('click', () => {
         clearTxError();
         const amount = document.getElementById('txAmount').value.trim();
