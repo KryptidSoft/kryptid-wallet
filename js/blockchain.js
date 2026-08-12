@@ -20,6 +20,8 @@ const BlockchainService = {
             "CAD": "en-CA", "TRY": "tr-TR", "IRR": "fa-IR"
         };
         const currentLocale = localeMap[selectedFiat] || "en-US";
+		
+		let totalAccumulatedFiat = 0;
 
         // --- 1. DYNAMICKÝ FETCH TRŽNÍCH CEN PRO VŠECHNY COINY NAJEDNOU ---
         let cryptoPricesInFiat = {};
@@ -95,6 +97,8 @@ const BlockchainService = {
                     
                     // Výpočet fiat hodnoty z načtené ceny
                     const amountInFiat = calculatedAmount * (cryptoPricesInFiat[coin] || 0);
+					
+					totalAccumulatedFiat += amountInFiat;
                     
                     if (selectedFiat === "XAU") {
                         fiatElement.innerText = `(${amountInFiat.toFixed(4)} oz GOLD)`;
@@ -117,6 +121,24 @@ const BlockchainService = {
                 }
             }
         }
+		
+		        // Zobrazení celkového součtu Total Balance na obrazovku
+        const totalBalanceElement = document.getElementById("total-balance-value");
+        if (totalBalanceElement) {
+            totalBalanceElement.innerText = selectedFiat === "XAU" 
+                ? `${totalAccumulatedFiat.toFixed(4)} oz GOLD` 
+                : totalAccumulatedFiat.toLocaleString(currentLocale, { style: 'currency', currency: selectedFiat });
+        }
+		
+		        // === PŘESNĚ SEM VLOŽTE TYTO NOVÉ ŘÁDKY ===
+        const currentActiveCoin = window.WalletState?.activeCoin;
+        const sourceInfoEl = document.getElementById('current-send-source-info');
+        if (currentActiveCoin && sourceInfoEl) {
+            const currentAddr = document.getElementById(`${currentActiveCoin.toLowerCase()}Address`)?.innerText || '---';
+            const currentBal = document.getElementById(`${currentActiveCoin.toLowerCase()}Balance`)?.innerText || '0.00';
+            sourceInfoEl.innerText = `${currentBal} (${currentAddr})`;
+        }
+
         // --- DYNAMIC MULTI-CHAIN TOKENS SCANNER (1inch API) ---
         // Skenuje tokeny pro aktivní EVM síť (Ethereum nebo BNB Chain) podle toho, co má uživatel zobrazeno
         for (const [coin, config] of Object.entries(KryptidNetworkRegistry)) {

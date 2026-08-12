@@ -85,6 +85,11 @@
                     <option value="RUB">RUB (₽) - Russian Ruble</option>
                     <option value="TRY">TRY (₺) - Turkish Lira</option>
                 </select>
+				
+                <div class="vault-lock-box">
+                    <label>Total Balance:</label>
+                    <div id="total-balance-value" class="crypto-amount">---</div>
+                </div>
             </div>
 
             <!-- DYNAMICKÉ KARTY PRO VŠECHNY POŽADOVANÉ MINCE -->
@@ -168,6 +173,11 @@
         <!-- UNIVERZÁLNÍ AKČNÍ ZÓNA PRO VŠECHNY RODINY MINCÍ -->
         <div id="action-zone">
             <h3 id="actionZoneTitle">Send Transaction / Swap (BTC)</h3>
+			
+			<div class="form-group">
+                <label>Your Balance:</label>
+                <span id="current-send-source-info">---</span>
+            </div>
             
             <div class="form-group">
                 <label for="txTarget">Recipient's Address:</label>

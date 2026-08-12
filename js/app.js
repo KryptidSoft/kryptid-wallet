@@ -240,6 +240,12 @@
             
             // 3. Dynamicky transformovat texty v odesílacím formuláři
             document.getElementById('actionZoneTitle').innerText = `Send Transaction / Swap (${selectedCoin})`;
+
+            // === PŘESNĚ SEM VLOŽTE TYTO 3 NOVÉ ŘÁDKY ===
+            const currentAddr = document.getElementById(`${selectedCoin.toLowerCase()}Address`)?.innerText || '---';
+            const currentBal = document.getElementById(`${selectedCoin.toLowerCase()}Balance`)?.innerText || '0.00';
+            document.getElementById('current-send-source-info').innerText = `${currentBal} (${currentAddr})`;
+
             if (universalSendBtn) universalSendBtn.innerText = `Send ${selectedCoin}`;
             
             // 4. DYNAMICKÝ UNIVERZÁLNÍ ENGLISH PLACEHOLDER PRO STOVKY MINCÍ
