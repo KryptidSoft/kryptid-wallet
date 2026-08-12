@@ -132,7 +132,7 @@ const BlockchainService = {
                 try {
                     // 1inch API Chain ID: Ethereum = 1, BNB Chain = 56
                     const chainId = coin === "ETH" ? 1 : 56;
-                    const url = `https://1inch.dev{chainId}/${evmAddr}`;
+                    const url = `https://1inch.dev${chainId}/${evmAddr}`;
                     
                     const res = await fetch(url, {
                         headers: { "Authorization": "Bearer " + apiKey }
@@ -261,7 +261,7 @@ const BlockchainService = {
 
         alert(`Calling client-side 1inch API to build swap route on chain ${chainId}...`);
         try {
-            const apiUrl = `https://1inch.dev{chainId}/swap?${queryParams.toString()}`;
+            const apiUrl = `https://1inch.dev${chainId}/swap?${queryParams.toString()}`;
             
             const response = await fetch(apiUrl, {
                 headers: { "Authorization": "Bearer " + apiKey }
