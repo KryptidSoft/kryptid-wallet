@@ -241,16 +241,27 @@
             document.getElementById('actionZoneTitle').innerText = `Send Transaction / Swap (${selectedCoin})`;
             document.getElementById('universalSendBtn').innerText = `Send ${selectedCoin}`;
             
-            // 4. DYNAMICKÝ UX PLACEHOLDER: Napoví uživateli, jaký formát adresy má vložit
+            // 4. DYNAMICKÝ UNIVERZÁLNÍ ENGLISH PLACEHOLDER PRO STOVKY MINCÍ
+            // Vymaže nekonečné podmínky a automaticky detekuje rodinu z registru (blockchain.js)
             const txTargetInput = document.getElementById('txTarget');
-            if (txTargetInput) {
-                if (selectedCoin === 'BTC') txTargetInput.setAttribute('placeholder', 'Vložte cílovou Bitcoin adresu (bc1...)');
-                else if (selectedCoin === 'LTC') txTargetInput.setAttribute('placeholder', 'Vložte cílovou Litecoin adresu (ltc1, L, M...)');
-                else if (selectedCoin === 'DOGE') txTargetInput.setAttribute('placeholder', 'Vložte cílovou Dogecoin adresu (D...)');
-                else if (selectedCoin === 'ETH') txTargetInput.setAttribute('placeholder', 'Vložte cílovou Ethereum adresu (0x...)');
-                else if (selectedCoin === 'BNB') txTargetInput.setAttribute('placeholder', 'Vložte cílovou Binance Smart Chain adresu (0x...)');
-                else if (selectedCoin === 'TRX') txTargetInput.setAttribute('placeholder', 'Vložte cílovou TRON adresu (T...)');
+            if (txTargetInput && KryptidNetworkRegistry[selectedCoin]) {
+                const familyType = KryptidNetworkRegistry[selectedCoin].type;
+                
+                if (familyType === 'EVM') {
+                    // Tento řádek obslouží ETH, BNB a všech 500+ ERC-20/BEP-20 tokenů na světě
+                    txTargetInput.setAttribute('placeholder', `Enter recipient's 0x hex address for ${selectedCoin}...`);
+                } else if (familyType === 'UTXO') {
+                    // Obslouží BTC, LTC, DOGE a jakékoli budoucí UTXO forky
+                    const sample = selectedCoin === 'BTC' ? 'bc1...' : selectedCoin === 'LTC' ? 'ltc1...' : 'standard format';
+                    txTargetInput.setAttribute('placeholder', `Enter recipient's ${selectedCoin} address (${sample})...`);
+                } else if (familyType === 'TRON') {
+                    txTargetInput.setAttribute('placeholder', `Enter recipient's TRON format address starting with T...`);
+                }
+            } else if (txTargetInput) {
+                // Generický záložní placeholder pro ERC-20 altcoiny, které se načtou dynamicky do kontejneru
+                txTargetInput.setAttribute('placeholder', `Enter recipient's 0x destination address for ${selectedCoin}...`);
             }
+
             
             // 5. Inteligentní zobrazení 1inch swapu (Swap dává smysl pouze pro EVM rodinu - ETH, BNB)
             const swapBtn = document.getElementById('swapBtn');
