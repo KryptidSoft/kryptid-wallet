@@ -93,9 +93,19 @@ button:hover {
     background-color: #00e6b8;
 }
 
+/* Stav, kdy uživatel drží tlačítko stisknuté (prstem nebo myší) */
 button:active {
-    transform: scale(0.98);
+    background-color: #00b399; /* Mírně ztmavne do syté tyrkysové pro dojem stisknutí */
+    transform: scale(0.96);               /* O malinko víc se smrští pro silnější klikací efekt */
 }
+
+/* SPECIÁLNÍ REAKCE PRO TEXTOVÁ TLAČÍTKA [copy] */
+/* Způsobí, že se textové [copy] při stisknutí nerozsype, ale pěkně tyrkysově problikne */
+.copy-trigger:active {
+    color: #00ffcc;
+    font-weight: 700;
+}
+
 
 /* Řazení úvodních onboarding tlačítek čistě pod sebe */
 .onboarding-routes button {
@@ -197,10 +207,24 @@ button:active {
 /* Hlavní obal karty pro každou kryptoměnu */
 .crypto-card {
     background-color: #080a0f;
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    border: 2px solid rgba(255, 255, 255, 0.04); /* Zvětšeno na 2px pro výraznější obvod */
     border-radius: 8px;
     padding: 0.85rem 1.1rem;
     margin-bottom: 0.75rem; /* Kompaktní, čistá mezera až ZA celou kartou */
+    cursor: pointer;        /* Změní kurzor na ruku, aby lidé věděli, že na to mohou stisknout */
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; /* Hladké tyrkysové rozsvícení */
+}
+
+/* Jemné zvýraznění okraje, když uživatel nad kartou jenom přejíždí myší */
+.crypto-card:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* AKTIVNÍ STAV: Rozsvícení obvodu karty identickou tyrkysovou barvou jako tlačítka */
+/* Třídu 'active-card' už váš JavaScript (js/app.js) na kartu automaticky přidává [ab4ca68]. */
+.crypto-card.active-card {
+    border-color: #00ffcc; /* Identická tyrkysová z vašich tlačítek */
+    box-shadow: 0 0 10px rgba(0, 255, 204, 0.25); /* Jemná tyrkysová záře podél celého obvodu */
 }
 
 /* Stylování jednotlivých řádků uvnitř jedné krypto karty */
@@ -256,7 +280,7 @@ button:active {
 /* Odkaz na transakční historii zarovnaný vpravo */
 .history-link {
     font-size: 0.8rem;
-    color: #627EEA; /* Odstraněno hnusné !important */
+    color: #627EEA;
     text-decoration: none;
     transition: color 0.15s;
 }

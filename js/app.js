@@ -207,7 +207,8 @@
             console.log(`[Kryptid] Initializing validation & signing sequence for ${currentCoin}...`);
 
             try {
-                // 2. Předání řízení do BlockchainService, která si sama vybere správný engine
+                // OPRAVENO: Částku pro blockchain.js necháme jako desetinné číslo, 
+                // protože blockchain.js si z registru sám vytáhne správné decimals a přepočítá satoshi!
                 await BlockchainService.sendTransaction(currentCoin, privateKey, fromAddress, target, amountStr);
                 
                 // Vyčištění polí formuláře po úspěšném odeslání
@@ -220,7 +221,7 @@
         });
     }
 
-    // REAKTIVNÍ OŽIVENÍ KLIKÁNÍ NA KARTY MINCÍ V DASHBOARDU (S UX OPRAVOU)
+// REAKTIVNÍ OŽIVENÍ KLIKÁNÍ NA KARTY MINCÍ V DASHBOARDU (S UX OPRAVOU)
     document.querySelectorAll('.crypto-card').forEach(card => {
         card.addEventListener('click', (e) => {
             // BEZPEČNOSTNÍ POJISTKA: Pokud uživatel kliknul na tlačítko [copy], chceme POUZE zkopírovat adresu.
@@ -239,7 +240,7 @@
             
             // 3. Dynamicky transformovat texty v odesílacím formuláři
             document.getElementById('actionZoneTitle').innerText = `Send Transaction / Swap (${selectedCoin})`;
-            document.getElementById('universalSendBtn').innerText = `Send ${selectedCoin}`;
+            if (universalSendBtn) universalSendBtn.innerText = `Send ${selectedCoin}`;
             
             // 4. DYNAMICKÝ UNIVERZÁLNÍ ENGLISH PLACEHOLDER PRO STOVKY MINCÍ
             // Vymaže nekonečné podmínky a automaticky detekuje rodinu z registru (blockchain.js)
@@ -262,7 +263,6 @@
                 txTargetInput.setAttribute('placeholder', `Enter recipient's 0x destination address for ${selectedCoin}...`);
             }
 
-            
             // 5. Inteligentní zobrazení 1inch swapu (Swap dává smysl pouze pro EVM rodinu - ETH, BNB)
             const swapBtn = document.getElementById('swapBtn');
             if (swapBtn) {
@@ -273,6 +273,15 @@
             // Vyčistit předchozí vstupy a chybové hlášky
             document.getElementById('txTarget').value = '';
             document.getElementById('txAmount').value = '';
+            
+            // ============================================================
+            // JEDINÁ OPRAVA: Plynulé svezení uživatele přímo k formuláři
+            // ============================================================
+            const actionZone = document.getElementById('action-zone');
+            if (actionZone) {
+                actionZone.scrollIntoView({ behavior: 'smooth' });
+            }
+
             clearTxError();
         });
     });
