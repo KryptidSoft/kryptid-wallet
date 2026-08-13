@@ -5,8 +5,10 @@ const KryptidNetworkRegistry = {
     "DOGE": { type: "UTXO", explorer: "dogechain.info", apiUrl: "https://tokenview.io{address}/utxo", decimals: 8, unit: "DOGE" },
     "ETH": { type: "EVM", rpcUrl: "https://ankr.com", decimals: 18, unit: "ETH" },
     "BNB": { type: "EVM", rpcUrl: "https://ankr.com", decimals: 18, unit: "BNB" },
-    "TRX": { type: "TRON", rpcUrl: "https://trongrid.io", decimals: 6, unit: "TRX" }
+    "TRX": { type: "TRON", rpcUrl: "https://trongrid.io", decimals: 6, unit: "TRX" },
+    "TON": { type: "TON", rpcUrl: "https://toncenter.com", decimals: 9, unit: "TON" }
 };
+
 
 const BlockchainService = {
     // AUTOMATIC MULTI-FIAT BLOCKCHAIN BALANCE CONVERSION ENGINE
@@ -87,10 +89,21 @@ const BlockchainService = {
                             calculatedAmount = balanceSun / 1000000;
                         }
                     }
+                    
+                    // D: Zpracování pro TON (Toncoin)
+                    else if (config.type === "TON") {
+                        if (window.TonWeb) {
+                            const tonWeb = new TonWeb(new TonWeb.HttpProvider(config.rpcUrl));
+                            const balanceNano = await tonWeb.provider.getBalance(address);
+                            calculatedAmount = parseInt(balanceNano) / Math.pow(10, config.decimals);
+                        }
+                    }
 
                     // Vykreslení kryptoměnového zůstatku na kartu
                     if (config.type === "UTXO") {
                         balanceElement.innerText = calculatedAmount.toFixed(8) + " " + config.unit;
+                    } else if (config.type === "TON") {
+                        balanceElement.innerText = calculatedAmount.toFixed(9) + " " + config.unit;
                     } else {
                         balanceElement.innerText = calculatedAmount.toFixed(4) + " " + config.unit;
                     }
@@ -251,6 +264,17 @@ const BlockchainService = {
                 throw new Error("TRON broadcast rejected by node.");
             }
         }
+        
+        // RODINA D: TON (Toncoin)
+        else if (config.type === "TON") {
+            if (!window.KryptidTONEngine) throw new Error("KryptidTONEngine missing! Ensure ton-vault.js is loaded.");
+            alert(`Initializing ${coin} Native transaction...`);
+            
+            alert(`Signing ${coin} Transaction locally via cryptographic engine...`);
+            const txHash = await window.KryptidTONEngine.sendTransaction(privateKey, fromAddress, target, amount, config.rpcUrl);
+            alert(`TON transaction successfully broadcasted! Hash: ${txHash}`);
+        }
+        
     },
 
     // TOKEN SWAP ROUTING VIA THE DECENTRALIZED 1INCH PORTAL ROUTER v6.0

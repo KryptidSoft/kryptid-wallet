@@ -3,7 +3,7 @@
 <head>
     <link rel="stylesheet" href="css/styles.css">
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://github.io; connect-src 'self' https://*.ankr.com https://ankr.com https://1inch.dev https://blockstream.info https://blockchain.info https://unpkg.com https://cryptocompare.com; script-src 'self' 'unsafe-inline' https://unpkg.com https://github.io;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://github.io; connect-src 'self' https://*.ankr.com https://ankr.com https://1inch.dev https://blockstream.info https://blockchain.info https://unpkg.com https://cryptocompare.com https://toncenter.com https://moneroworld.com; script-src 'self' 'unsafe-inline' https://unpkg.com https://github.io;">
     <title>Kryptid Wallet</title>
     <link rel="icon" type="image/png" sizes="512x512" href="favicon.png">
     <link rel="apple-touch-icon" href="favicon.png">
@@ -130,6 +130,18 @@
                 </div>
             </div>
 
+            <div class="crypto-card" data-coin="TON">
+                <div class="crypto-row address-row">
+                    <strong>Toncoin Address:</strong>
+                    <span id="tonAddress">---</span>
+                </div>
+                <div class="crypto-row balance-row">
+                    <span id="tonBalance" class="crypto-amount">0.0000 TON</span>
+                    <span id="tonFiat" class="fiat-amount">(0.00 USD)</span>
+                    <span id="tonHistoryLink" class="history-link">Transaction History</span>
+                </div>
+            </div>
+
             <div class="crypto-card" data-coin="DOGE">
                 <div class="crypto-row address-row">
                     <strong>Dogecoin Address:</strong>
@@ -238,8 +250,8 @@
     <!-- Lokální knihovny ve složce vendor -->
     <script src="js/vendor/crypto-js.min.js"></script>
     <script src="js/vendor/ethers.umd.min.js"></script>
-    <script src="js/vendor/secp256k1.min.js"></script>
     <script src="js/vendor/bitcoin.min.js"></script>
+    <script src="js/vendor/tonweb.js"></script>
     
     <!-- Pro budoucí rozšíření o TRON rodinu stačí odkomentovat lokální knihovnu -->
     <!-- <script src="js/vendor/tronweb.js"></script> -->
@@ -247,6 +259,7 @@
     <!-- Architektonické vrstvy aplikace -->
     <script src="js/security.js"></script>
     <script src="js/utxo-vault.js"></script>
+    <script src="js/ton-vault.js"></script>
     <script src="js/blockchain.js"></script>
     <script src="js/wallet-engine.js"></script>
     <script src="js/app.js"></script>

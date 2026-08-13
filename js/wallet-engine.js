@@ -112,10 +112,20 @@ const WalletEngine = {
             }
         }
 
+        // Pravidlo F: TON (Uživatelské adresy v Base64url, délka 48 znaků)
+        else if (coin === 'TON') {
+            if (!/^[a-zA-Z0-9_\-]{48}$/.test(targetClean)) {
+                showTxError("Error: Invalid TON address format. Must be a 48-character string (Base64url).");
+                return false;
+            }
+        }
+
         // 4. BLOKOVÁNÍ KATASTROFÁLNÍCH ZÁMĚN (Uživatel vložil adresu z jiné rodiny)
         if (coin !== 'BTC' && targetClean.startsWith('bc1')) { showTxError(`Error: Cannot send ${coin} to a Bitcoin address!`); return false; }
         if (coin !== 'LTC' && targetClean.startsWith('ltc1')) { showTxError(`Error: Cannot send ${coin} to a Litecoin address!`); return false; }
         if (coin !== 'ETH' && coin !== 'BNB' && targetClean.startsWith('0x')) { showTxError(`Error: Cannot send ${coin} to an EVM address!`); return false; }
+        if (coin !== 'TRX' && /^T[a-km-zA-HJ-NP-Z1-9]{33}$/.test(targetClean)) { showTxError(`Error: Cannot send ${coin} to a TRON address!`); return false; }
+        if (coin !== 'TON' && /^[a-zA-Z0-9_\-]{48}$/.test(targetClean) && (targetClean.startsWith('EQ') || targetClean.startsWith('UQ'))) { showTxError(`Error: Cannot send ${coin} to a TON address!`); return false; }
 
         return true;
     },
