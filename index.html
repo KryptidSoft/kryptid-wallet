@@ -12,7 +12,7 @@
 
     <div class="wallet-branding">
         <img src="favicon.png" alt="Kryptid Logo" class="wallet-small-logo">
-        <h1>Kryptid Wallet</h1>
+        <h1>Kryptid Wallet [Beta]</h1>
     </div>
 
     <div class="disclaimer-box">
@@ -22,7 +22,7 @@
     <!-- ONBOARDING INITIALIZATION SCREEN -->
     <div id="onboarding-screen">
         <h2>Welcome</h2>
-        <p class="section-desc">Choose how you want to open your wallet:</p>
+        <p class="section-desc">Open your wallet and become a kryptid:</p>
         
         <div class="onboarding-routes">
             <button id="routeCreateBtn">Create a New Wallet</button>
@@ -170,13 +170,14 @@
             <div id="dynamicTokensContainer"></div>
         </div>
 
-        <!-- UNIVERZÁLNÍ AKČNÍ ZÓNA PRO VŠECHNY RODINY MINCÍ -->
+<!-- UNIVERZÁLNÍ AKČNÍ ZÓNA PRO VŠECHNY RODINY MINCÍ -->
         <div id="action-zone">
             <h3 id="actionZoneTitle">Send Transaction / Swap (BTC)</h3>
 			
 			<div class="form-group">
                 <label>Your Balance:</label>
-                <span id="current-send-source-info">---</span>
+                <!-- Přidána třída pro sjednocení vzhledu s inputy, ID zůstává zachováno pro JS -->
+                <div id="current-send-source-info" class="wallet-balance-display">---</div>
             </div>
             
             <div class="form-group">
@@ -188,6 +189,7 @@
                 <label for="txAmount">Amount:</label>
                 <input type="number" id="txAmount" step="any" placeholder="0.00">
             </div>
+
             
             <div id="txError"></div>
             
@@ -222,6 +224,16 @@
         </div>
 
     </div>
+	
+	            </div>
+        </div>
+
+    </div>
+
+    <!-- DOKONALE LADÍCÍ WEB3 PATIČKA -->
+    <footer class="wallet-footer">
+        <p>&copy; 2026 KryptidSoft. All rights reserved.</p>
+    </footer>
 
     <!-- Lokální knihovny ve složce vendor -->
     <script src="js/vendor/crypto-js.min.js"></script>
