@@ -3,7 +3,7 @@
 <head>
     <link rel="stylesheet" href="css/styles.css">
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://github.io; connect-src 'self' https://*.ankr.com https://ankr.com https://1inch.dev https://blockstream.info https://blockchain.info https://unpkg.com https://cryptocompare.com https://toncenter.com https://moneroworld.com; script-src 'self' 'unsafe-inline' https://unpkg.com https://github.io;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://github.io; connect-src 'self' https://*.ankr.com https://ankr.com https://1inch.dev https://blockstream.info https://blockchain.info https://unpkg.com https://cryptocompare.com https://toncenter.com https://solana.com https://solana.com; script-src 'self' 'unsafe-inline' https://unpkg.com https://github.io;">
     <title>Kryptid Wallet</title>
     <link rel="icon" type="image/png" sizes="512x512" href="favicon.png">
     <link rel="apple-touch-icon" href="favicon.png">
@@ -78,7 +78,7 @@
                     <option value="EUR">EUR (€) - Euro</option>
                     <option value="GBP">GBP (£) - British Pound</option>
                     <option value="CHF">CHF (CHF) - Swiss Franc</option>
-                    <option value="INR">INR (Format) - Indian Rupee</option>
+                    <option value="INR">INR (₹) - Indian Rupee</option>
                     <option value="IRR">IRR (﷼) - Iranian Rial</option>
                     <option value="JPY">JPY (¥) - Japanese Yen</option>
                     <option value="PLN">PLN (zł) - Polish Zloty</option>
@@ -177,6 +177,20 @@
                     <span id="trxHistoryLink" class="history-link">Transaction History</span>
                 </div>
             </div>
+			
+            <div class="crypto-card" data-coin="SOL">
+                <div class="crypto-row address-row">
+                    <strong>Solana Address:</strong>
+                    <span id="solAddress">---</span>
+                </div>
+                <div class="crypto-row balance-row">
+                    <span id="solBalance" class="crypto-amount">0.0000 SOL</span>
+                    <span id="solFiat" class="fiat-amount">(0.00 USD)</span>
+                    <span id="solHistoryLink" class="history-link">Transaction History</span>
+                </div>
+                <!-- Kontejner pro automatické načtení SPL tokenů (USDC, USDT atd.) -->
+                <div id="solTokensContainer" class="sol-dynamic-tokens" style="padding: 5px 10px; font-size: 0.85em; opacity: 0.8;"></div>
+            </div>
             
             <!-- Kontejner pro ERC-20 / BEP-20 tokeny načtené přes 1inch API -->
             <div id="dynamicTokensContainer"></div>
@@ -252,6 +266,7 @@
     <script src="js/vendor/ethers.umd.min.js"></script>
     <script src="js/vendor/bitcoin.min.js"></script>
     <script src="js/vendor/tonweb.js"></script>
+    <script src="js/vendor/solana-web3.min.js"></script>
     
     <!-- Pro budoucí rozšíření o TRON rodinu stačí odkomentovat lokální knihovnu -->
     <!-- <script src="js/vendor/tronweb.js"></script> -->
@@ -260,6 +275,7 @@
     <script src="js/security.js"></script>
     <script src="js/utxo-vault.js"></script>
     <script src="js/ton-vault.js"></script>
+	<script src="js/solana-vault.js"></script>
     <script src="js/blockchain.js"></script>
     <script src="js/wallet-engine.js"></script>
     <script src="js/app.js"></script>

@@ -6,7 +6,8 @@ const KryptidNetworkRegistry = {
     "ETH": { type: "EVM", rpcUrl: "https://ankr.com", decimals: 18, unit: "ETH" },
     "BNB": { type: "EVM", rpcUrl: "https://ankr.com", decimals: 18, unit: "BNB" },
     "TRX": { type: "TRON", rpcUrl: "https://trongrid.io", decimals: 6, unit: "TRX" },
-    "TON": { type: "TON", rpcUrl: "https://toncenter.com", decimals: 9, unit: "TON" }
+    "TON": { type: "TON", rpcUrl: "https://toncenter.com", decimals: 9, unit: "TON" },
+	"SOL": { type: "SOL", rpcUrl: "https://solana.com", decimals: 9, unit: "SOL" }
 };
 
 
@@ -98,6 +99,15 @@ const BlockchainService = {
                             calculatedAmount = parseInt(balanceNano) / Math.pow(10, config.decimals);
                         }
                     }
+                    
+                    // E: Zpracování pro SOL (Solana)
+                    else if (config.type === "SOL") {
+                        if (window.KryptidSolanaEngine) {
+                            calculatedAmount = await KryptidSolanaEngine.getBalance(address, config.rpcUrl);
+                            // Spustí kompletní skener schovaný v solana-vault.js a předá mu rpcUrl a adresu
+                            KryptidSolanaEngine.scanAndRenderTokens(address, config.rpcUrl);
+                        }
+                    }
 
                     // Vykreslení kryptoměnového zůstatku na kartu
                     if (config.type === "UTXO") {
@@ -126,7 +136,7 @@ const BlockchainService = {
                 }
             } else {
                 // Výchozí prázdný stav, pokud peněženka ještě není načtená
-                balanceElement.innerText = coin === "BTC" || coin === "LTC" ? `0.00000000 ${config.unit}` : `0.0000 ${config.unit}`;
+                balanceElement.innerText = (coin === "BTC" || coin === "LTC") ? `0.00000000 ${config.unit}` : (coin === "SOL" || coin === "TON" ? `0.000000000 ${config.unit}` : `0.0000 ${config.unit}`);
                 if (selectedFiat === "XAU") {
                     fiatElement.innerText = "(0.0000 oz GOLD)";
                 } else {
@@ -273,6 +283,16 @@ const BlockchainService = {
             alert(`Signing ${coin} Transaction locally via cryptographic engine...`);
             const txHash = await window.KryptidTONEngine.sendTransaction(privateKey, fromAddress, target, amount, config.rpcUrl);
             alert(`TON transaction successfully broadcasted! Hash: ${txHash}`);
+        }
+        
+        // RODINA E: SOL (Solana)
+        else if (config.type === "SOL") {
+            if (!window.KryptidSolanaEngine) throw new Error("KryptidSolanaEngine missing! Ensure solana-vault.js is loaded.");
+            alert(`Initializing ${coin} Native transaction...`);
+            
+            alert(`Signing ${coin} Transaction locally via cryptographic engine...`);
+            const txHash = await window.KryptidSolanaEngine.sendTransaction(privateKey, target, parseFloat(amount), config.rpcUrl);
+            alert(`Solana transaction successfully broadcasted! Signature: ${txHash}`);
         }
         
     },

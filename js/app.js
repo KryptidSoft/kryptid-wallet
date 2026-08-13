@@ -83,9 +83,14 @@
             const linkElement = document.getElementById(`${coinLower}HistoryLink`);
             if (linkElement && KryptidNetworkRegistry[coin]) {
                 linkElement.onclick = () => { 
-                    const baseUrl = coin === 'BTC' || coin === 'LTC' || coin === 'DOGE'
-                        ? `https://${KryptidNetworkRegistry[coin].explorer}/address/`
-                        : `https://${coin === 'ETH' ? 'etherscan.io' : 'bscscan.com'}/address/`;
+                    let baseUrl;
+                    if (coin === 'BTC' || coin === 'LTC' || coin === 'DOGE') {
+                        baseUrl = `https://${KryptidNetworkRegistry[coin].explorer}/address/`;
+                    } else if (coin === 'SOL') {
+                        baseUrl = `https://solscan.io`;
+                    } else {
+                        baseUrl = `https://${coin === 'ETH' ? 'etherscan.io' : 'bscscan.com'}/address/`;
+                    }
                     window.open(baseUrl + accounts.addresses[coin], "_blank"); 
                 };
             }
@@ -157,10 +162,15 @@
         _secureState = { seedPhrase: null, ethPrivateKey: null, btcPrivateKey: null, privateKeys: {} };
         
         // Dynamicky najde všechny elementy adres, zůstatků a fiat hodnot a bezpečně je resetuje
-        document.querySelectorAll('[id$="Address"]').forEach(el => el.innerText = '---');
         document.querySelectorAll('[id$="Balance"]').forEach(el => {
             const coin = el.id.replace('Balance', '').toUpperCase();
-            el.innerText = coin === 'BTC' || coin === 'LTC' ? `0.00000000 ${coin}` : `0.0000 ${coin}`;
+            if (coin === 'BTC' || coin === 'LTC') {
+                el.innerText = `0.00000000 ${coin}`;
+            } else if (coin === 'SOL' || coin === 'TON') {
+                el.innerText = `0.000000000 ${coin}`;
+            } else {
+                el.innerText = `0.0000 ${coin}`;
+            }
         });
         document.querySelectorAll('[id$="Fiat"]').forEach(el => el.innerText = '(0.00 USD)');
         
@@ -263,6 +273,8 @@
                     txTargetInput.setAttribute('placeholder', `Enter recipient's ${selectedCoin} address (${sample})...`);
                 } else if (familyType === 'TRON') {
                     txTargetInput.setAttribute('placeholder', `Enter recipient's TRON format address starting with T...`);
+                } else if (familyType === 'SOL') {
+                    txTargetInput.setAttribute('placeholder', `Enter recipient's Base58 Solana address (e.g. 7xKX...)...`);
                 }
             } else if (txTargetInput) {
                 // Generický záložní placeholder pro ERC-20 altcoiny, které se načtou dynamicky do kontejneru

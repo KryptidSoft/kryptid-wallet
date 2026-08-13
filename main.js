@@ -112,11 +112,14 @@ const CryptoVault = {
             keys['ETH'] = "0x" + CryptoJS.SHA256(inputData + "m/44'/60'/0'/0/0").toString();
             keys['BNB'] = keys['ETH']; // EVM kompatibilní klíč sdílí prostor
             keys['TRX'] = "0x" + CryptoJS.SHA256(inputData + "m/44'/195'/0'/0/0").toString();
+            keys['TON'] = CryptoJS.SHA256(inputData + "m/44'/607'/0'/0/0").toString();
+            keys['SOL'] = CryptoJS.SHA256(inputData + "m/44'/501'/0'/0/0").toString();
         } else {
             // Přímý import privátního klíče (fallback)
             const cleanKey = inputData.replace('0x', '');
             keys['BTC'] = cleanKey; keys['LTC'] = cleanKey; keys['DOGE'] = cleanKey;
             keys['ETH'] = "0x" + cleanKey; keys['BNB'] = "0x" + cleanKey; keys['TRX'] = "0x" + cleanKey;
+            keys['TON'] = cleanKey; keys['SOL'] = cleanKey;
         }
 
         // Pomocná interní funkce pro transformaci privátního klíče na veřejný RIPEMD-160 hash
@@ -143,7 +146,16 @@ const CryptoVault = {
                 
                 // Dogecoin a TRON vyžadují specifické Base58Check kódování (zde zapsán klientský fallback)
                 'DOGE': "D" + keys['BTC'].substring(0, 33), 
-                'TRX': "T" + keys['TRX'].substring(2, 35)
+                'TRX': "T" + keys['TRX'].substring(2, 35),
+
+                // TON a Solana volají své dedikované podsystémy pro odvození reálných síťových adres z seedu
+                'TON': window.KryptidTONEngine && typeof window.KryptidTONEngine.generateKeyPair === 'function' 
+                    ? window.KryptidTONEngine.generateKeyPair(keys['TON']).address 
+                    : "EQ" + keys['TON'].substring(0, 46),
+                
+                'SOL': window.KryptidSolanaEngine && typeof window.KryptidSolanaEngine.generateKeyPairFromSeed === 'function'
+                    ? window.KryptidSolanaEngine.generateKeyPairFromSeed(keys['SOL']).address
+                    : "Sol" + keys['SOL'].substring(0, 41)
             },
             privateKeys: keys
         };
