@@ -306,7 +306,7 @@ const BlockchainService = {
     },
 
     // UNIVERZÁLNÍ TOKEN SWAP ROUTING SE ZAPOČTENÍM 0,2% POPLATKU PRO NON-EVM I EVM SÍTĚ
-    async executeSwap(amount) {
+    async executeSwap(amount, privateKey) {
         const currentCoin = window.WalletState?.activeCoin;
         const config = KryptidNetworkRegistry[currentCoin];
 
@@ -363,7 +363,7 @@ const BlockchainService = {
                 });
 
                 alert(`Calling client-side 1inch API to build swap route on chain ${chainId}...`);
-                const apiUrl = `https://1inch.dev{chainId}/swap?${queryParams.toString()}`;
+                const apiUrl = `https://1inch.dev${chainId}/swap?${queryParams.toString()}`;
                 
                 const response = await fetch(apiUrl, { headers: { "Authorization": "Bearer " + apiKey } });
                 if (!response.ok) throw new Error(await response.text());
@@ -379,7 +379,7 @@ const BlockchainService = {
                 const solMint = "So11111111111111111111111111111111111111112";   // Nativní SOL zabalený (WSOL)
                 
                 alert("Calling Jupiter Aggregator v6 to build automated route...");
-                const quoteUrl = `https://jup.ag{solMint}&outputMint=${usdtSolMint}&amount=${rawAmountToSwap}&slippageBps=50`;
+                const quoteUrl = `https://jup.ag${solMint}&outputMint=${usdtSolMint}&amount=${rawAmountToSwap}&slippageBps=50`;
                 
                 const res = await fetch(quoteUrl);
                 if (!res.ok) throw new Error("Failed to fetch optimal quote route from Jupiter API.");

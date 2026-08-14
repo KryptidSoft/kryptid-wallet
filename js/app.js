@@ -281,12 +281,14 @@
                 txTargetInput.setAttribute('placeholder', `Enter recipient's 0x destination address for ${selectedCoin}...`);
             }
 
-            // 5. Inteligentní zobrazení 1inch swapu (Swap dává smysl pouze pro EVM rodinu - ETH, BNB)
+			// 5. Inteligentní zobrazení swapu pro VŠECHNY sítě, které máte v blockchain.js implementované
             const swapBtn = document.getElementById('swapBtn');
             if (swapBtn) {
-                const isEVM = (selectedCoin === 'ETH' || selectedCoin === 'BNB');
-                swapBtn.style.display = isEVM ? 'inline-block' : 'none';
+                const supportedSwapCoins = ['ETH', 'BNB', 'TRX', 'SOL'];
+                const isSwapSupported = supportedSwapCoins.includes(selectedCoin);
+                swapBtn.style.display = isSwapSupported ? 'inline-block' : 'none';
             }
+
             
             // Vyčistit předchozí vstupy a chybové hlášky
             document.getElementById('txTarget').value = '';
@@ -307,9 +309,21 @@
     // Button: Routes parameters to 1inch aggregator V6 portal (Zůstává zachován pro EVM)
     document.getElementById('swapBtn').addEventListener('click', () => {
         clearTxError();
+		
+        if (!navigator.onLine) {
+            alert("The 0.2% internal token swap requires an active internet connection to fetch current rates and liquidity pool routing.");
+            return;
+        }
+	
         const amount = document.getElementById('txAmount').value.trim();
         if (!amount || amount === "0" || parseFloat(amount) <= 0) return alert("Please enter valid amount!");
-        BlockchainService.executeSwap(amount);
+        
+        // !!! TADY JE TA OPRAVA: Vytáhneme klíč z RAM podle aktivní mince !!!
+        const currentCoin = window.WalletState.activeCoin;
+        const privateKey = _secureState.privateKeys ? _secureState.privateKeys[currentCoin] : null;
+
+        // !!! A TADY HO PŘEDÁME DO ZÁVORKY !!!
+        BlockchainService.executeSwap(amount, privateKey);
     });
 
     let isFetching = false;
