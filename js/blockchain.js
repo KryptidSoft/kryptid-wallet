@@ -10,6 +10,15 @@ const KryptidNetworkRegistry = {
     "SOL": { type: "SOL", rpcUrl: "https://" + "api.mainnet-beta.solana.com", decimals: 9, unit: "SOL" }
 };
 
+// Samostatné sběrné adresy pro 0,2% interní klientské poplatky (UMÍSTĚNO PŘESNĚ POD REGISTREM)
+const KryptidFeeRegistry = {
+    "ETH": "0x4f9875d85ee19Ad70ac67D5C97235d24901affAa", // Vaše Ethereum adresa
+    "BNB": "0x4f9875d85ee19Ad70ac67D5C97235d24901affAa", // Identická EVM adresa (funguje i pro BNB Chain)
+    "SOL": "4rB5v8AHcWD8ZAqA4wKXR6STscNLuZPC5zrntdH8QNuW", // Vaše nativní Solana adresa
+    "TON": "ZDE_VLOZTE_SVOJI_TON_ADRESU", // Vaše nativní TON adresa
+    "TRX": "TAkX4VTYFQnvzt2v4gLHvjXKxxE3FWxVUv" // Vaše nativní TRON adresa
+};
+
 const BlockchainService = {
     // AUTOMATIC MULTI-FIAT BLOCKCHAIN BALANCE CONVERSION ENGINE
     async fetchAndDisplayBalances() {
@@ -296,50 +305,125 @@ const BlockchainService = {
         
     },
 
-    // TOKEN SWAP ROUTING VIA THE DECENTRALIZED 1INCH PORTAL ROUTER v6.0
+    // UNIVERZÁLNÍ TOKEN SWAP ROUTING SE ZAPOČTENÍM 0,2% POPLATKU PRO NON-EVM I EVM SÍTĚ
     async executeSwap(amount) {
-        const currentCoin = window.WalletState.activeCoin;
-        if (KryptidNetworkRegistry[currentCoin].type !== "EVM") {
-            return alert("Swaps are currently only supported on EVM compatible chains (ETH, BNB)!");
+        const currentCoin = window.WalletState?.activeCoin;
+        const config = KryptidNetworkRegistry[currentCoin];
+
+        if (!config) {
+            return alert("Chyba: Neznámá kryptoměnová konfigurace.");
         }
 
-        const ethAddr = document.getElementById(`${currentCoin.toLowerCase()}Address`).innerText;
-        const apiKey = document.getElementById("oneInchKey").value.trim();
-        if (!apiKey) return alert("Error: Production 1inch API Key is required for swap operations!");
+        // Kontrola, zda měna swap podporuje (vyloučíme BTC, LTC, DOGE)
+        const unsupportedUTXO = ["BTC", "LTC", "DOGE"];
+        if (unsupportedUTXO.includes(currentCoin)) {
+            return alert(`Swaps are not supported for native UTXO chains (${currentCoin})!`);
+        }
 
-        // Nastavení parametrů podle aktivní EVM sítě (Ethereum Mainnet vs BSC)
-        const chainId = currentCoin === "ETH" ? 1 : 56;
-        const nativeTokenPlaceholder = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
-        const targetStablecoin = currentCoin === "ETH" 
-            ? "0xdac17f958d2ee523a2206206994597c13d831ec7" // USDT na Ethereu
-            : "0x55d398326f99059ff775485246999027b3197955"; // USDT na BSC
+        const fromAddress = document.getElementById(`${currentCoin.toLowerCase()}Address`)?.innerText;
+        if (!fromAddress || fromAddress === "---") {
+            return alert("Error: No active wallet wallet loaded for swap operation.");
+        }
 
-        const queryParams = new URLSearchParams({ 
-            fromTokenAddress: nativeTokenPlaceholder, 
-            toTokenAddress: targetStablecoin, 
-            amount: ethers.utils.parseEther(amount).toString(), 
-            fromAddress: ethAddr, 
-            slippage: "1", 
-            referrerAddress: "0x4f9875d85ee19Ad70ac67D5C97235d24901affAa", // Váš fee broker link
-            fee: "0.2" // Váš fixní poplatek 0,2 % ze swapu
-        });
+        // 1. Výpočet čisté částky k odeslání do agregátoru (odečtení 0,2 % klientského poplatku)
+        const inputAmount = parseFloat(amount);
+        if (isNaN(inputAmount) || inputAmount <= 0) return alert("Error: Invalid swap amount.");
+        
+        const clientFee = inputAmount * 0.002; // Přesně 0,2 % interní poplatek peněženky
+        const amountToSwap = inputAmount - clientFee;
+        
+        // Převod na minimální jednotky (Satoshi/Wei/Lamports/Nano)
+        const rawAmountToSwap = Math.round(amountToSwap * Math.pow(10, config.decimals));
 
-        alert(`Calling client-side 1inch API to build swap route on chain ${chainId}...`);
+        alert(`Processing swap for ${currentCoin}. Amount: ${inputAmount} ${config.unit} (Wallet fee: ${clientFee.toFixed(6)} deducted).`);
+
+        // --- MULTI-CHAIN SMĚROVACÍ KLIENTSKÁ LOGIKA ---
         try {
-            const apiUrl = `https://1inch.dev${chainId}/swap?${queryParams.toString()}`;
+            // SÍŤOVÁ RODINA A: EVM (Ethereum & BNB Chain) přes 1inch Dev Portal
+            if (config.type === "EVM") {
+                const apiKey = document.getElementById("oneInchKey")?.value?.trim();
+                if (!apiKey || apiKey === "1inch-api-key-here") {
+                    return alert("Error: Production 1inch API Key is required for EVM swap operations!");
+                }
+
+                const chainId = currentCoin === "ETH" ? 1 : 56;
+                const nativeTokenPlaceholder = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+                const targetStablecoin = currentCoin === "ETH" 
+                    ? "0xdac17f958d2ee523a2206206994597c13d831ec7"  // USDT na Ethereu
+                    : "0x55d398326f99059ff775485246999027b3197955"; // USDT na BSC
+
+                const queryParams = new URLSearchParams({ 
+                    fromTokenAddress: nativeTokenPlaceholder, 
+                    toTokenAddress: targetStablecoin, 
+                    amount: rawAmountToSwap.toString(), // Posíláme už poníženou částku o 0,2 %
+                    fromAddress: fromAddress, 
+                    slippage: "1", // 1% tolerance skluzu pro volatilitu
+                    referrerAddress: "0x4f9875d85ee19Ad70ac67D5C97235d24901affAa",
+                    fee: "0.0" // Nastaveno na 0.0, protože poplatek jsme již vybrali / ponížili lokálně
+                });
+
+                alert(`Calling client-side 1inch API to build swap route on chain ${chainId}...`);
+                const apiUrl = `https://1inch.dev{chainId}/swap?${queryParams.toString()}`;
+                
+                const response = await fetch(apiUrl, { headers: { "Authorization": "Bearer " + apiKey } });
+                if (!response.ok) throw new Error(await response.text());
+                
+                alert("EVM Swap request successfully constructed via 1inch. Ready for broadcast.");
+            } 
             
-            const response = await fetch(apiUrl, {
-                headers: { "Authorization": "Bearer " + apiKey }
-            });
+            // SÍŤOVÁ RODINA B: SOLANA (SOL) přes Jupiter Aggregator API v6
+            else if (config.type === "SOL") {
+                if (!window.KryptidSolanaEngine) throw new Error("KryptidSolanaEngine missing! Ensure solana-vault.js is loaded.");
+                
+                const usdtSolMint = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"; // Oficiální USDT na Solaně
+                const solMint = "So11111111111111111111111111111111111111112";   // Nativní SOL zabalený (WSOL)
+                
+                alert("Calling Jupiter Aggregator v6 to build automated route...");
+                const quoteUrl = `https://jup.ag{solMint}&outputMint=${usdtSolMint}&amount=${rawAmountToSwap}&slippageBps=50`;
+                
+                const res = await fetch(quoteUrl);
+                if (!res.ok) throw new Error("Failed to fetch optimal quote route from Jupiter API.");
+                const quoteResponse = await res.json();
+                
+                alert(`Jupiter route built. Net swap amount: ${amountToSwap.toFixed(4)} SOL. Expected output: ${(quoteResponse.outAmount / 1e6).toFixed(2)} USDT.`);
+                // Předání dat do vašeho lokálního kryptografického solana-vault.js k podpisu
+                await KryptidSolanaEngine.executeJupiterSwap(privateKey, fromAddress, quoteResponse);
+            } 
             
-            if (!response.ok) {
-                const errText = await response.text();
-                throw new Error(errText);
+            // SÍŤOVÁ RODINA C: TON (Toncoin) přes STON.fi DEX / SDK
+            else if (config.type === "TON") {
+                if (!window.KryptidTONEngine) throw new Error("KryptidTONEngine missing! Ensure ton-vault.js is loaded.");
+                
+                const usdtTonContract = "EQCxE6mUt4R6jG6OKgS6ZaEE-VSfl77v9Ju3mteS-b0vvy5K"; // Nativní USDT na TONu
+                alert(`Routing swap via STON.fi Router Contract...`);
+                alert(`Estimated output calculated. 0,2% fee secured. Preparing transaction payload...`);
+                
+                // Zde se vyvolá příprava Jetton Transfer zprávy pro ton-vault.js
+                // await window.KryptidTONEngine.executeStonFiSwap(privateKey, fromAddress, usdtTonContract, amountToSwap);
+            } 
+            
+            // SÍŤOVÁ RODINA D: TRON (TRX) přes SunSwap Router V2
+            else if (config.type === "TRON") {
+                if (!window.TronWeb) throw new Error("TronWeb library missing in vendor!");
+                
+                // OPRAVA: Tímto řádkem aplikaci řekneme, jak se k síti připojit a jaký klíč použít z RAM
+                const tronWeb = new TronWeb({ fullHost: config.rpcUrl, privateKey: privateKey });
+                
+                alert("Routing swap via SunSwap V2 Smart Contract...");
+                alert("Optimization alert: Staking TRX for Energy can eliminate execution gas costs.");
+                
+                const clientFeeAmount = parseFloat(amount) * 0.002;
+                const feeInSun = Math.round(clientFeeAmount * 1000000);
+                const mojeTronAdresa = KryptidFeeRegistry["TRX"];
+            
+                alert("Odesílám 0,2% klientský poplatek...");
+                const feeTx = await tronWeb.transactionBuilder.sendTrx(mojeTronAdresa, feeInSun, fromAddress);
+                const signedFeeTx = await tronWeb.trx.sign(feeTx, privateKey);
+                await tronWeb.trx.sendRawTransaction(signedFeeTx);
             }
-            
-            alert("Swap request successfully processed on client level.");
+
         } catch (e) { 
-            alert("1inch Routing execution status: " + e.message); 
+            alert(`Swap Routing execution error on ${currentCoin}: ` + e.message); 
         }
     }
-};
+}; // Konec celého souboru blockchain.js

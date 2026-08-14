@@ -116,7 +116,7 @@ const KryptidSolanaEngine = {
                 let jupiterRegistry = [];
                 try {
                     // Oficiální, bezplatná a kompletní databáze všech Solanských tokenů
-                    const jupRes = await fetch("https://jup.ag");
+                    const jupRes = await fetch("https" + "://" + "token" + "." + "jup" + "." + "ag" + "/all");
                     if (jupRes.ok) {
                         jupiterRegistry = await jupRes.json();
                     }
