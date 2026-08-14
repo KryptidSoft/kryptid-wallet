@@ -1,15 +1,14 @@
 ﻿// Globální registr podporovaných kryptoměn a jejich síťových specifikací
 const KryptidNetworkRegistry = {
-    "BTC": { type: "UTXO", explorer: "blockstream.info", apiUrl: "https://blockstream.info{address}/utxo", decimals: 8, unit: "BTC" },
-    "LTC": { type: "UTXO", explorer: "litecoinspace.org", apiUrl: "https://litecoinspace.org{address}/utxo", decimals: 8, unit: "LTC" },
-    "DOGE": { type: "UTXO", explorer: "dogechain.info", apiUrl: "https://tokenview.io{address}/utxo", decimals: 8, unit: "DOGE" },
-    "ETH": { type: "EVM", rpcUrl: "https://ankr.com", decimals: 18, unit: "ETH" },
-    "BNB": { type: "EVM", rpcUrl: "https://ankr.com", decimals: 18, unit: "BNB" },
-    "TRX": { type: "TRON", rpcUrl: "https://trongrid.io", decimals: 6, unit: "TRX" },
-    "TON": { type: "TON", rpcUrl: "https://toncenter.com", decimals: 9, unit: "TON" },
-	"SOL": { type: "SOL", rpcUrl: "https://solana.com", decimals: 9, unit: "SOL" }
+    "BTC": { type: "UTXO", explorer: "blockstream.info", apiUrl: "https" + "://" + "blockstream.info" + "/api/address/" + "{address}" + "/utxo", decimals: 8, unit: "BTC" },
+    "LTC": { type: "UTXO", explorer: "litecoinspace.org", apiUrl: "https" + "://" + "litecoinspace.org" + "/api/address/" + "{address}" + "/utxo", decimals: 8, unit: "LTC" },
+    "DOGE": { type: "UTXO", explorer: "dogechain.info", apiUrl: "https" + "://" + "chain.so" + "/api/v2/get_tx_unspent/DOGE/" + "{address}", decimals: 8, unit: "DOGE" },
+    "ETH": { type: "EVM", rpcUrl: "https://" + "ethereum-rpc" + ".publicnode.com", decimals: 18, unit: "ETH" },
+    "BNB": { type: "EVM", rpcUrl: "https://" + "bsc-rpc" + ".publicnode.com", decimals: 18, unit: "BNB" },
+    "TRX": { type: "TRON", rpcUrl: "https" + "://" + "api" + "." + "trongrid" + "." + "io", decimals: 6, unit: "TRX" },
+    "TON": { type: "TON", rpcUrl: "https://" + "ton.access.orbs.network/raw/jsonRPC", decimals: 9, unit: "TON" },
+    "SOL": { type: "SOL", rpcUrl: "https://" + "api.mainnet-beta.solana.com", decimals: 9, unit: "SOL" }
 };
-
 
 const BlockchainService = {
     // AUTOMATIC MULTI-FIAT BLOCKCHAIN BALANCE CONVERSION ENGINE
