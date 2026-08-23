@@ -31,7 +31,7 @@
     </div>
 
     <div class="disclaimer-box">
-        <strong>DISCLAIMER:</strong> Use at your own risk. KryptidSoft is not responsible for any financial losses caused by losing your seed phrase, malware, or software bugs.
+        <strong>DISCLAIMER:</strong> Use at your own risk. KryptidSoft is not responsible for any financial losses caused by losing your seed phrase.
     </div>
     
     <!-- ONBOARDING INITIALIZATION SCREEN -->
@@ -276,23 +276,36 @@
         <p>&copy; 2026 KryptidSoft. All rights reserved.</p>
     </footer>
 
-    <!-- Lokální knihovny ve složce vendor -->
+    <!-- Lokální kryptografické knihovny (Vendor) -->
     <script src="js/vendor/crypto-js.min.js"></script>
     <script src="js/vendor/ethers.umd.min.js"></script>
     <script src="js/vendor/bitcoin.min.js"></script>
-    <script src="js/vendor/tonweb.js"></script>
     <script src="js/vendor/solana-web3.min.js"></script>
-    
-    <!-- Pro budoucí rozšíření o TRON rodinu stačí odkomentovat lokální knihovnu -->
-    <!-- <script src="js/vendor/tronweb.js"></script> -->
-    
-    <!-- Architektonické vrstvy aplikace -->
+    <script src="js/vendor/tonweb.js"></script>
+    <script src="js/vendor/tronweb.js"></script>
+
+    <!-- Architektonické a podpisové vrstvy peněženky (Vault Engines) -->
     <script src="js/security.js"></script>
     <script src="js/utxo-vault.js"></script>
+    <script src="js/solana-vault.js"></script>
     <script src="js/ton-vault.js"></script>
-	<script src="js/solana-vault.js"></script>
     <script src="js/blockchain.js"></script>
-    <script src="js/wallet-engine.js"></script>
+
+    
+    <!-- KRYPTID CORE SCRIPT INJECTION WITH V8 PROTECTION -->
+    <script>
+      if (typeof nw !== 'undefined') {
+        // Produkční desktopový režim - načtení chráněných binárních jader z RAM snapshotů
+        nw.Window.get().evalNWBin(null, 'main.bin');
+        nw.Window.get().evalNWBin(null, 'js/wallet-engine.bin');
+      } else {
+        // Vývojářský záložní režim pro klasický webový prohlížeč
+        const s1 = document.createElement('script'); s1.src = 'main.js'; document.head.appendChild(s1);
+        const s2 = document.createElement('script'); s2.src = 'js/wallet-engine.js'; document.head.appendChild(s2);
+      }
+    </script>
+
     <script src="js/app.js"></script>
 </body>
 </html>
+

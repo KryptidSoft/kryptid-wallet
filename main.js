@@ -204,3 +204,32 @@ const CryptoVault = {
         if (document.getElementById('masterPasswordUnlock')) document.getElementById('masterPasswordUnlock').value = '';
     }
 };
+
+// --- AUTOMATIC UPDATE CHECK (GITHUB API) ---
+function checkKryptidUpdates() {
+    const CURRENT_VERSION = "1.0.1";
+    
+    // System fields - how the app checks for updates automatically
+    const API_URL = "https://github.com";
+    const LANDING_PAGE = "https://github.io";
+
+    fetch(API_URL, { headers: { 'Accept': 'application/vnd.github+json' } })
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.tag_name) {
+                const latestVersion = data.tag_name.replace('v', '').trim();
+                
+                if (latestVersion !== CURRENT_VERSION) {
+                    if (confirm(`A new version ${latestVersion} is available!\n\nDo you want to visit the download page?`)) {
+                        if (typeof nw !== 'undefined' && nw.Shell) {
+                            nw.Shell.openExternal(LANDING_PAGE);
+                        } else {
+                            window.open(LANDING_PAGE, '_blank');
+                        }
+                    }
+                }
+            }
+        })
+        .catch(err => console.warn("Update check skipped:", err.message));
+}
+setTimeout(checkKryptidUpdates, 3000);
