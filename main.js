@@ -205,20 +205,35 @@ const CryptoVault = {
     }
 };
 
-// --- AUTOMATIC UPDATE CHECK (GITHUB API) ---
+// --- AUTOMATIC UPDATE CHECK (FIXED GITHUB API) ---
 function checkKryptidUpdates() {
     const CURRENT_VERSION = "1.0.1";
     
-    // System fields - how the app checks for updates automatically
-    const API_URL = "https://github.com";
-    const LANDING_PAGE = "https://github.io";
+    // Spravne GitHub API pro vas repozitar
+    const API_URL = "https://api.github.com/repos/KryptidSoft/KryptidWallet/releases/latest";
+    
+    // Adresa vasi landing page (pokud zatim chcete jen otevirat web)
+    const LANDING_PAGE = "https://KryptidSoft.github.io/KryptidWallet/";
 
-    fetch(API_URL, { headers: { 'Accept': 'application/vnd.github+json' } })
-        .then(response => response.json())
+    // GitHub API striktne vyzaduje User-Agent hlavy, jinak vrati chybu 403 Forbidden
+    fetch(API_URL, { 
+        headers: { 
+            'Accept': 'application/vnd.github+json',
+            'User-Agent': 'Kryptid-Wallet-App'
+        } 
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data && data.tag_name) {
+                // Odstranime pripadne 'v' z tagu (napr. 'v1.0.1' -> '1.0.1')
                 const latestVersion = data.tag_name.replace('v', '').trim();
                 
+                // Porovnani verzi
                 if (latestVersion !== CURRENT_VERSION) {
                     if (confirm(`A new version ${latestVersion} is available!\n\nDo you want to visit the download page?`)) {
                         if (typeof nw !== 'undefined' && nw.Shell) {
@@ -232,4 +247,6 @@ function checkKryptidUpdates() {
         })
         .catch(err => console.warn("Update check skipped:", err.message));
 }
+
+// Spusteni kontroly 3 sekundy po nacteni aplikace
 setTimeout(checkKryptidUpdates, 3000);
