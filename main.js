@@ -188,7 +188,13 @@ const CryptoVault = {
             return;
         }
         try {
-            const dataToEncrypt = _secureState.seedPhrase || _secureState.ethPrivateKey;
+            let dataToEncrypt = _secureState.seedPhrase || _secureState.ethPrivateKey;
+            const targetLength = 512;
+            if (dataToEncrypt.length < targetLength) {
+                const paddingNeeded = targetLength - dataToEncrypt.length - 1;
+                const randomPadding = CryptoJS.lib.WordArray.random(paddingNeeded).toString(CryptoJS.enc.Hex).substring(0, paddingNeeded);
+                dataToEncrypt = dataToEncrypt + "|" + randomPadding;
+            }
             const salt = CryptoJS.enc.Utf8.parse("KryptidWalletSovereignEdition2026");
             const key = CryptoJS.PBKDF2(password, salt, { keySize: 256 / 32, iterations: 1000 });
             const passwordHash = CryptoJS.SHA256(password).toString();
@@ -212,8 +218,9 @@ const CryptoVault = {
             const bytes = CryptoJS.AES.decrypt(ciphertext, key, { iv: iv });
             const decryptedText = bytes.toString(CryptoJS.enc.Utf8);
             if (decryptedText && decryptedText.length > 0) {
+                const cleanResult = decryptedText.split('|')[0];
                 this.showStatus("Primary secure ledger operational.");
-                return decryptedText;
+                return cleanResult;
             } else {
                 this.showStatus("Access denied: Invalid authentication password.", true);
                 return null;

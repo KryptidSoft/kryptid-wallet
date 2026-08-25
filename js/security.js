@@ -1,41 +1,47 @@
 const SecurityLayer = {
     init() {
-        // DYNAMICKÝ SELEKTOR: Najde všechna heslová pole a specifické textové vstupy pro seed
         const inputs = document.querySelectorAll('input[type="password"], #seedInput, #masterPassword, #masterPasswordUnlock');
         
         inputs.forEach(input => {
             if (!input) return;
             
-            // Ochrana před Keyloggery, doplňky a našeptávači OS
             input.setAttribute('type', 'password');
             input.setAttribute('autocomplete', 'off');
             input.setAttribute('autocorrect', 'off');
             input.setAttribute('spellcheck', 'false');
 
-            // Absolutní zákaz kopírování citlivých dat VEN z aplikace
             input.addEventListener('copy', (e) => {
                 e.preventDefault();
-                console.warn("[Kryptid Security] Copy operations are strictly blocked inside cryptographic zones.");
             });
             input.addEventListener('cut', (e) => {
                 e.preventDefault();
-                console.warn("[Kryptid Security] Cut operations are strictly blocked inside cryptographic zones.");
             });
 
-            // BEZPEČNÁ OPRAVA: Schránka operačního systému se vymaže ihned po vložení (anti-clipboard malware)
             input.addEventListener('paste', () => {
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     setTimeout(() => {
                         navigator.clipboard.writeText("");
-                        console.log("[Kryptid Security] OS Clipboard wiped immediately after successful paste.");
                     }, 1);
                 }
             });
         });
 
-        // DODATEČNÁ FUNKCE: Ochrana proti pokusům o drag & drop citlivých textů do aplikace
         document.querySelectorAll('#seedInput, [id*="Password"]').forEach(zone => {
             zone.addEventListener('drop', (e) => e.preventDefault());
+        });
+
+        const overlay = document.createElement('div');
+        overlay.id = 'security-blur-overlay';
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:999999;display:none;align-items:center;justify-content:center;color:#fff;font-family:monospace;font-size:20px;';
+        overlay.textContent = 'Kryptid Vault Secured';
+        document.body.appendChild(overlay);
+
+        window.addEventListener('blur', () => {
+            overlay.style.display = 'flex';
+        });
+
+        window.addEventListener('focus', () => {
+            overlay.style.display = 'none';
         });
     }
 };
