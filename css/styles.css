@@ -389,3 +389,14 @@ button:active {
 #clearMemoryBtn:hover {
     background-color: #dc2626;
 }
+
+/* Přídavek k bezpečnosti */
+.status-message-display {
+    font-size: 14px;
+    margin-top: 12px;
+    font-weight: bold;
+    text-align: center;
+    font-family: monospace;
+    min-height: 20px;
+    transition: color 0.3s ease;
+}

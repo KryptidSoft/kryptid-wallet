@@ -166,32 +166,62 @@ const CryptoVault = {
 
         return derivedOutputs;
     },
+	
+	    showStatus(text, isError = false) {
+        const statusEl = document.getElementById('vault-status-message');
+        if (statusEl) {
+            statusEl.textContent = text;
+            statusEl.style.color = isError ? '#ff4d4d' : '#4da6ff';
+            setTimeout(() => { statusEl.textContent = ''; }, 4000);
+        } else {
+            console.log(text);
+        }
+    },
 
     encryptAndSave(password) {
-        if (!_secureState.seedPhrase && !_secureState.ethPrivateKey) return alert("Není co šifrovat, RAM je prázdná!");
-        if (!password) return alert("Zadejte Master Password!");
+        if (!_secureState.seedPhrase && !_secureState.ethPrivateKey) {
+            this.showStatus("Encryption failed: RAM memory pool is empty.", true);
+            return;
+        }
+        if (!password) {
+            this.showStatus("Authentication required: Please enter Master Password.", true);
+            return;
+        }
         try {
             const dataToEncrypt = _secureState.seedPhrase || _secureState.ethPrivateKey;
-            const salt = CryptoJS.lib.WordArray.random(128 / 8);
-            const iv = CryptoJS.lib.WordArray.random(128 / 8);
+            const salt = CryptoJS.enc.Utf8.parse("KryptidWalletSovereignEdition2026");
             const key = CryptoJS.PBKDF2(password, salt, { keySize: 256 / 32, iterations: 1000 });
+            const passwordHash = CryptoJS.SHA256(password).toString();
+            const iv = CryptoJS.enc.Hex.parse(passwordHash.substring(0, 32));
             const encrypted = CryptoJS.AES.encrypt(dataToEncrypt, key, { iv: iv });
-            localStorage.setItem('kryptid_encrypted_vault', JSON.stringify({ ciphertext: encrypted.toString(), salt: salt.toString(), iv: iv.toString() }));
-            alert("Trezor uložen.");
-        } catch (e) { alert(e.message); }
+            localStorage.setItem('kryptid_encrypted_vault', encrypted.toString());
+            this.showStatus("Vault secured and saved successfully.");
+        } catch (e) { 
+            this.showStatus("Cryptographic error: " + e.message, true); 
+        }
     },
 
     decryptAndLoad(password) {
-        const encryptedData = localStorage.getItem('kryptid_encrypted_vault');
-        if (!encryptedData || !password) return null;
+        const ciphertext = localStorage.getItem('kryptid_encrypted_vault');
+        if (!ciphertext || !password) return null;
         try {
-            const payload = JSON.parse(encryptedData);
-            const salt = CryptoJS.enc.Hex.parse(payload.salt);
-            const iv = CryptoJS.enc.Hex.parse(payload.iv);
+            const salt = CryptoJS.enc.Utf8.parse("KryptidWalletSovereignEdition2026");
             const key = CryptoJS.PBKDF2(password, salt, { keySize: 256 / 32, iterations: 1000 });
-            const bytes = CryptoJS.AES.decrypt(payload.ciphertext, key, { iv: iv });
-            return bytes.toString(CryptoJS.enc.Utf8);
-        } catch (e) { return null; }
+            const passwordHash = CryptoJS.SHA256(password).toString();
+            const iv = CryptoJS.enc.Hex.parse(passwordHash.substring(0, 32));
+            const bytes = CryptoJS.AES.decrypt(ciphertext, key, { iv: iv });
+            const decryptedText = bytes.toString(CryptoJS.enc.Utf8);
+            if (decryptedText && decryptedText.length > 0) {
+                this.showStatus("Primary secure ledger operational.");
+                return decryptedText;
+            } else {
+                this.showStatus("Access denied: Invalid authentication password.", true);
+                return null;
+            }
+        } catch (e) { 
+            this.showStatus("Access denied: Invalid authentication password.", true);
+            return null; 
+        }
     },
 
     zeroingMemory() {
