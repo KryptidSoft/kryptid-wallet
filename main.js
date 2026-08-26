@@ -242,17 +242,12 @@ const CryptoVault = {
     }
 };
 
-// --- AUTOMATIC UPDATE CHECK (FIXED GITHUB API) ---
+// --- AUTOMATIC UPDATE CHECK (BLBUVZDORNÉ POROVNÁNÍ) ---
 function checkKryptidUpdates() {
-    const CURRENT_VERSION = "1.0.1";
-    
-    // Spravne GitHub API pro vas repozitar
+    const CURRENT_VERSION = "1.0.1"; // Zde můžete příště napsat verzi s 'v' i bez něj.
     const API_URL = "https://api.github.com/repos/KryptidSoft/KryptidWallet/releases/latest";
-    
-    // Adresa vasi landing page (pokud zatim chcete jen otevirat web)
     const LANDING_PAGE = "https://KryptidSoft.github.io/KryptidWallet/";
 
-    // GitHub API striktne vyzaduje User-Agent hlavy, jinak vrati chybu 403 Forbidden
     fetch(API_URL, { 
         headers: { 
             'Accept': 'application/vnd.github+json',
@@ -267,12 +262,25 @@ function checkKryptidUpdates() {
         })
         .then(data => {
             if (data && data.tag_name) {
-                // Odstranime pripadne 'v' z tagu (napr. 'v1.0.1' -> '1.0.1')
-                const latestVersion = data.tag_name.replace('v', '').trim();
+                // Pomocná funkce, která smaže písmena (v) a rozdělí verzi na pole čísel [1, 0, 2]
+                const parseVer = (vStr) => vStr.replace(/[^0-9.]/g, '').split('.').map(Number);
                 
-                // Porovnani verzi
-                if (latestVersion !== CURRENT_VERSION) {
-                    if (confirm(`A new version ${latestVersion} is available!\n\nDo you want to visit the download page?`)) {
+                const latest = parseVer(data.tag_name);   // Např. [1, 0, 2] z GitHubu
+                const current = parseVer(CURRENT_VERSION); // Např. [1, 0, 1] z aplikace
+
+                // Matematické porovnání verzí (porovnává Major, Minor, Patch nezávisle na znacích)
+                let isNewer = false;
+                for (let i = 0; i < Math.max(latest.length, current.length); i++) {
+                    const lNum = latest[i] || 0;
+                    const cNum = current[i] || 0;
+                    if (lNum > cNum) { isNewer = true; break; }
+                    if (lNum < cNum) { break; }
+                }
+
+                // Hláška vyskočí POUZE tehdy, když je číslo na internetu matematicky VYŠŠÍ
+                if (isNewer) {
+                    const cleanLatestStr = latest.join('.');
+                    if (confirm(`A new version ${cleanLatestStr} is available!\n\nDo you want to visit the download page?`)) {
                         if (typeof nw !== 'undefined' && nw.Shell) {
                             nw.Shell.openExternal(LANDING_PAGE);
                         } else {

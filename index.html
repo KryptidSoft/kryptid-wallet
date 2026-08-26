@@ -277,7 +277,28 @@
         <p>&copy; 2026 KryptidSoft. All rights reserved.</p>
     </footer>
 
-    <!-- Lokální kryptografické knihovny (Vendor) -->
+    <!-- ====================================================================== -->
+    <!-- 1. KRYPTID CORE SCRIPT INJECTION WITH V8 PROTECTION (VŽDY JAKO PRVNÍ) -->
+    <!-- ====================================================================== -->
+    <script>
+      if (typeof nw !== 'undefined') {
+        // Produkční desktopový režim - načtení chráněných binárních jader z RAM snapshotů
+        const path = require('path');
+        const appDir = path.dirname(process.execPath);
+
+        // Načtení z absolutní, stoprocentně bezpečné cesty
+        nw.Window.get().evalNWBin(null, path.join(appDir, 'main.bin'));
+        nw.Window.get().evalNWBin(null, path.join(appDir, 'js/wallet-engine.bin'));
+      } else {
+        // Vývojářský a mobilní režim (stoprocentně bezpečný pro Android)
+        const s1 = document.createElement('script'); s1.src = 'main.js'; s1.async = false; document.head.appendChild(s1);
+        const s2 = document.createElement('script'); s2.src = 'js/wallet-engine.js'; s2.async = false; document.head.appendChild(s2);
+      }
+    </script>
+
+    <!-- ====================================================================== -->
+    <!-- 2. LOKÁLNÍ KRYPTOGRAFICKÉ KNIHOVNY (VENDOR) -->
+    <!-- ====================================================================== -->
     <script src="js/vendor/crypto-js.min.js"></script>
     <script src="js/vendor/ethers.umd.min.js"></script>
     <script src="js/vendor/bitcoin.min.js"></script>
@@ -285,28 +306,18 @@
     <script src="js/vendor/tonweb.js"></script>
     <script src="js/vendor/tronweb.js"></script>
 
-    <!-- Architektonické a podpisové vrstvy peněženky (Vault Engines) -->
+    <!-- ====================================================================== -->
+    <!-- 3. ARCHITEKTONICKÉ A PODPISOVÉ VRSTVY PENĚŽENKY (VAULT ENGINES) -->
+    <!-- ====================================================================== -->
     <script src="js/security.js"></script>
     <script src="js/utxo-vault.js"></script>
     <script src="js/solana-vault.js"></script>
     <script src="js/ton-vault.js"></script>
     <script src="js/blockchain.js"></script>
-
-    
-    <!-- KRYPTID CORE SCRIPT INJECTION WITH V8 PROTECTION -->
-    <script>
-      if (typeof nw !== 'undefined') {
-        // Produkční desktopový režim - načtení chráněných binárních jader z RAM snapshotů
-        nw.Window.get().evalNWBin(null, 'main.bin');
-        nw.Window.get().evalNWBin(null, 'js/wallet-engine.bin');
-      } else {
-        // Vývojářský záložní režim pro klasický webový prohlížeč
-        const s1 = document.createElement('script'); s1.src = 'main.js'; document.head.appendChild(s1);
-        const s2 = document.createElement('script'); s2.src = 'js/wallet-engine.js'; document.head.appendChild(s2);
-      }
-    </script>
-
+   
+    <!-- ====================================================================== -->
+    <!-- 4. LOGIKA APLIKACE A ODLAPÁVÁNÍ KLIKNUTÍ (VŽDY POSLEDNÍ) -->
+    <!-- ====================================================================== -->
     <script src="js/app.js"></script>
 </body>
 </html>
-
