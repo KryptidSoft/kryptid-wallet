@@ -12,7 +12,7 @@
         const bscNode = "https://" + "bsc-rpc" + ".publicnode.com";
         const tonNode = "https://" + "ton.access" + ".orbs.network";
         
-        const cspRules = `default-src 'self' https://github.io; style-src 'self' 'unsafe-inline'; connect-src 'self' ${ethNode} ${bscNode} ${tonNode} https://trongrid.io https://api.mainnet-beta.solana.com https://blockstream.info https://litecoinspace.org https://chain.so https://min-api.cryptocompare.com https://api.1inch.dev https://unpkg.com; script-src 'self' 'unsafe-inline' https://unpkg.com https://github.io;`;
+        const cspRules = `default-src 'self' https://github.io; style-src 'self' 'unsafe-inline'; connect-src 'self' ${ethNode} ${bscNode} ${tonNode} https://trongrid.io https://api.mainnet-beta.solana.com https://blockstream.info https://litecoinspace.org https://chain.so https://min-api.cryptocompare.com https://api.1inch.dev https://unpkg.com https://api.github.com; script-src 'self' 'unsafe-inline' https://unpkg.com https://github.io;`;
         
         const metaTag = document.createElement('meta');
         metaTag.httpEquiv = "Content-Security-Policy";
