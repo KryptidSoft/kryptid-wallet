@@ -244,7 +244,7 @@ const CryptoVault = {
 
 // --- AUTOMATIC UPDATE CHECK (BLBUVZDORNÉ POROVNÁNÍ) ---
 function checkKryptidUpdates() {
-    const CURRENT_VERSION = "1.0.1"; // Zde můžete příště napsat verzi s 'v' i bez něj.
+    const CURRENT_VERSION = "1.0.2"; // Zde můžete příště napsat verzi s 'v' i bez něj.
     const API_URL = "https://api.github.com/repos/KryptidSoft/KryptidWallet/releases/latest";
     const LANDING_PAGE = "https://KryptidSoft.github.io/KryptidWallet/";
 
