@@ -274,7 +274,7 @@ function checkKryptidUpdates() {
                     const lNum = latest[i] || 0;
                     const cNum = current[i] || 0;
                     if (lNum > cNum) { isNewer = true; break; }
-                    if (lNum < cNum) { break; }
+                    if (lNum <= cNum) { isNewer = false; break; }
                 }
 
                 // Hláška vyskočí POUZE tehdy, když je číslo na internetu matematicky VYŠŠÍ
