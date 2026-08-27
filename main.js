@@ -281,5 +281,5 @@ function checkKryptidUpdates() {
 }
 
 // Spustí tichou kontrolu 3 sekundy po zapnutí aplikace
-setTimeout(checkKryptidUpdates, 3000);
+// setTimeout(checkKryptidUpdates, 3000);
 
