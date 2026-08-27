@@ -242,38 +242,44 @@ const CryptoVault = {
     }
 };
 
+// Automatická aktualizace
 function checkKryptidUpdates() {
-    // ZDE ručně napíšete čas, kdy jste tuto verzi sestavil (Formát: RRRR-MM-DDTHH:MM:SSZ)
-    // Tento čas změníte jen tehdy, když budete vydávat novou verzi!!!!!!!!!!!!!!!!!!
-    const THIS_VERSION_RELEASE_TIME = new Date("2026-08-27T15:00:00Z"); 
+    // Verze této instalace v počítači/mobilu uživatele
+    const MY_VERSION = "1.0.2"; 
+    
+    // Správně poskládaná adresa, která míří přesně na váš textový soubor
+    const USERNAME = "KryptidSoft";
+    const REPO = "KryptidWallet";
+    const CHECK_URL = "https://" + USERNAME + ".github.io/" + REPO + "/update.txt";
+    const LANDING_PAGE = "https://" + USERNAME + ".github.io/" + REPO + "/";
 
-    const API_URL = "https://api.github.com/repos/KryptidSoft/KryptidWallet/releases/latest";
-    const LANDING_PAGE = "https://KryptidSoft.github.io/KryptidWallet/";
+    // Tiché stažení textu z vaší internetové cedule
+    fetch(CHECK_URL, { cache: "no-store" })
+        .then(response => response.ok ? response.text() : null)
+        .then(latestVersion => {
+            if (latestVersion) {
+                // FILTR: Vyčistí text z webu od písmena "v", mezer a neviditelných znaků
+                const cleanedLatest = latestVersion.toLowerCase().replace('v', '').trim();
+                
+                // FILTR: Vyčistí verzi v aplikaci, aby formáty stoprocentně seděly
+                const cleanedMyVersion = MY_VERSION.toLowerCase().replace('v', '').trim();
 
-    fetch(API_URL, { 
-        headers: { 
-            'Accept': 'application/vnd.github+json',
-            'User-Agent': 'Kryptid-Wallet-App'
-        } 
-    })
-    .then(response => response.ok ? response.json() : null)
-    .then(data => {
-        if (data && data.published_at) {
-            const githubReleaseTime = new Date(data.published_at);
+                // POROVNÁNÍ: Pokud se texty rovnají (1.0.2 === 1.0.2) -> UTICHNI A KONEC.
+                if (cleanedLatest === cleanedMyVersion) {
+                    return; 
+                }
 
-            // Pokud je na GitHubu release s novějším časem, než má tato běžící verze
-            if (githubReleaseTime > THIS_VERSION_RELEASE_TIME) {
-                if (confirm(`A new update is available on GitHub!\n\nDo you want to visit the download page?`)) {
-                    if (typeof nw !== 'undefined' && nw.Shell) {
-                        nw.Shell.openExternal(LANDING_PAGE);
-                    } else {
-                        window.open(LANDING_PAGE, '_blank');
-                    }
+                // POKUD SE TEXTY NEROVNAJÍ: Otevře se web pro stažení nové verze
+                if (typeof nw !== 'undefined' && nw.Shell) {
+                    nw.Shell.openExternal(LANDING_PAGE);
+                } else {
+                    window.open(LANDING_PAGE, '_blank');
                 }
             }
-        }
-    })
-    .catch(err => console.warn("Update check skipped:", err.message));
+        })
+        .catch(err => console.warn("Update check skipped:", err.message));
 }
 
+// Spustí tichou kontrolu 3 sekundy po zapnutí aplikace
 setTimeout(checkKryptidUpdates, 3000);
+
