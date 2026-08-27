@@ -75,7 +75,7 @@
     </div>
 
     <template>
-        <input type="password" id="oneInchKey" autocomplete="off" value="1inch-api-key-here">
+		<input type="password" id="oneInchKey" aria-label="1inch API Key" autocomplete="off" value="1inch-api-key-here">
     </template>
     <!-- MAIN WALLET DASHBOARD -->
     <div id="main-wallet-dashboard" style="display: none;">
@@ -102,7 +102,7 @@
                 </select>
 				
                 <div class="vault-lock-box">
-                    <label>Total Balance:</label>
+                    <l<strong>Total Balance:</strong>
                     <div id="total-balance-value" class="crypto-amount">---</div>
                 </div>
             </div>
@@ -216,7 +216,7 @@
             <h3 id="actionZoneTitle">Send Transaction / Swap (BTC)</h3>
 			
 			<div class="form-group">
-                <label>Your Balance:</label>
+                <strong>Your Balance:</strong>
                 <!-- Přidána třída pro sjednocení vzhledu s inputy, ID zůstává zachováno pro JS -->
                 <div id="current-send-source-info" class="wallet-balance-display">---</div>
             </div>
