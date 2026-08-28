@@ -21,29 +21,30 @@ function clearTxError() {
 const WalletEngine = {
     // BIP-39 VALIDATOR & LINTER WORDS DICTIONARY (100% Zachován)
     validateSeedPhrase: async function(v) {
-        if (!v.includes(' ') && v.split(/[\s,.\-_]+/).length <= 1) return v;
-        let c = v.toLowerCase().replace(/[.,\-_#@*+/\\()\[\]{}!?:;0-9]/g, ' ').replace(/\s+/g, ' ').trim();
-        const w = c.split(' ');
-        if (w.length !== 12 && w.length !== 24) { 
-            showTxError(`Error: Seed must be 12 or 24 words. Found: ${w.length}.`); 
+        const cleanInput = v.trim();
+        
+        // If it's a raw private key (no spaces), pass it directly as valid string
+        if (!cleanInput.includes(' ')) return cleanInput;
+        
+        // Clean the string into standard lowercase space-separated words
+        let sanitized = cleanInput.toLowerCase().replace(/[.,\-_#@*+/\\()\[\]{}!?:;0-9]/g, ' ').replace(/\s+/g, ' ').trim();
+        const words = sanitized.split(' ');
+        
+        if (words.length !== 12 && words.length !== 24) { 
+            showTxError(`Error: Seed must be 12 or 24 words. Found: ${words.length}.`); 
             return null; 
         }
-        try {
-            const res = await fetch('js/vendor/bip39-words.txt');
-            if (res.ok) {
-                const txt = await res.text();
-                const valid = txt.split(/\r?\n/).map(x => x.trim()).filter(x => x.length > 0);
-                for (let word of w) { 
-                    if (!valid.includes(word)) { 
-                        showTxError(`Typo Error: "${word}" is not valid BIP-39!`); 
-                        return null; 
-                    } 
-                }
+        
+        // UNBREAKABLE BIP-39 VALIDATION VIA ETHERS (No external txt files needed)
+        if (window.ethers && ethers.utils && typeof ethers.utils.isValidMnemonic === 'function') {
+            const isValid = ethers.utils.isValidMnemonic(sanitized);
+            if (!isValid) {
+                showTxError("Error: Invalid BIP-39 seed phrase! Check for typos or wrong word order.");
+                return null;
             }
-        } catch (err) { 
-            console.warn("Linter skipped:", err.message); 
         }
-        return w.join(' ');
+        
+        return sanitized;
     },
 
     // JEDNOTNÁ UNIVERZÁLNÍ VALIDACE TRANSAKCÍ PRO VŠECHNY MINCE A RODINY

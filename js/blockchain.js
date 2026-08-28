@@ -2,7 +2,7 @@
 const KryptidNetworkRegistry = {
     "BTC": { type: "UTXO", explorer: "blockstream.info", apiUrl: "https" + "://" + "blockstream.info" + "/api/address/" + "{address}" + "/utxo", decimals: 8, unit: "BTC" },
     "LTC": { type: "UTXO", explorer: "litecoinspace.org", apiUrl: "https" + "://" + "litecoinspace.org" + "/api/address/" + "{address}" + "/utxo", decimals: 8, unit: "LTC" },
-    "DOGE": { type: "UTXO", explorer: "dogechain.info", apiUrl: "https" + "://" + "chain.so" + "/api/v2/get_tx_unspent/DOGE/" + "{address}", decimals: 8, unit: "DOGE" },
+    "DOGE": { type: "UTXO", explorer: "dogechain.info", apiUrl: "https" + "://" + "doge" + ".blockbook" + ".binance" + ".com" + "/api/v2/utxo/" + "{address}", decimals: 8, unit: "DOGE" },
     "ETH": { type: "EVM", rpcUrl: "https://" + "ethereum-rpc" + ".publicnode.com", decimals: 18, unit: "ETH" },
     "BNB": { type: "EVM", rpcUrl: "https://" + "bsc-rpc" + ".publicnode.com", decimals: 18, unit: "BNB" },
     "TRX": { type: "TRON", rpcUrl: "https" + "://" + "api" + "." + "trongrid" + "." + "io", decimals: 6, unit: "TRX" },
@@ -185,7 +185,7 @@ const BlockchainService = {
                 try {
                     // 1inch API Chain ID: Ethereum = 1, BNB Chain = 56
                     const chainId = coin === "ETH" ? 1 : 56;
-                    const url = `https://1inch.dev${chainId}/${evmAddr}`;
+                    const url = "https" + "://" + "api" + ".1inch" + ".dev" + "/balance/v1.2/" + chainId + "/balances/" + evmAddr;
                     
                     const res = await fetch(url, {
                         headers: { "Authorization": "Bearer " + apiKey }
@@ -363,7 +363,7 @@ const BlockchainService = {
                 });
 
                 alert(`Calling client-side 1inch API to build swap route on chain ${chainId}...`);
-                const apiUrl = `https://1inch.dev${chainId}/swap?${queryParams.toString()}`;
+                const apiUrl = "https" + "://" + "api" + ".1inch" + ".dev" + "/swap/v6.0/" + chainId + "/swap?" + queryParams.toString();
                 
                 const response = await fetch(apiUrl, { headers: { "Authorization": "Bearer " + apiKey } });
                 if (!response.ok) throw new Error(await response.text());
@@ -379,7 +379,7 @@ const BlockchainService = {
                 const solMint = "So11111111111111111111111111111111111111112";   // Nativní SOL zabalený (WSOL)
                 
                 alert("Calling Jupiter Aggregator v6 to build automated route...");
-                const quoteUrl = `https://jup.ag${solMint}&outputMint=${usdtSolMint}&amount=${rawAmountToSwap}&slippageBps=50`;
+                const quoteUrl = "https" + "://" + "quote" + "-api" + ".jup" + ".ag" + "/v6/quote?inputMint=" + solMint + "&outputMint=" + usdtSolMint + "&amount=" + rawAmountToSwap + "&slippageBps=50";
                 
                 const res = await fetch(quoteUrl);
                 if (!res.ok) throw new Error("Failed to fetch optimal quote route from Jupiter API.");

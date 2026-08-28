@@ -65,7 +65,16 @@ window.KryptidTONEngine = {
         const wallet = new WalletClass(tonweb.provider, { publicKey: publicKey });
 
         // Načtení aktuálního sekvenčního čísla (seqno) z blockchainu kvůli ochraně proti replay útokům
-        const seqno = await wallet.methods.seqno().call() || 0;
+        let seqno = 0;
+        try {
+            const remoteSeqno = await wallet.methods.seqno().call();
+            if (remoteSeqno !== undefined && remoteSeqno !== null) {
+                seqno = parseInt(remoteSeqno);
+            }
+        } catch (seqnoErr) {
+            console.warn("TON wallet contract not deployed yet, defaulting seqno to 0:", seqnoErr.message);
+            seqno = 0;
+        }
 
         // Převod částky na NanoTON (1 TON = 1,000,000,000 NanoTON)
         const amountNano = tonweb.utils.toNano(amount.toString());

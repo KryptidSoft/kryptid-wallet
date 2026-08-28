@@ -74,7 +74,7 @@ const KryptidSolanaEngine = {
                 solanaWeb3.SystemProgram.transfer({
                     fromPubkey: fromKeypair.publicKey,
                     toPubkey: toPublicKey,
-                    lamports: amountSol * 1000000000
+                    lamports: Math.round(parseFloat(amountSol) * 1000000000)
                 })
             );
 
@@ -116,7 +116,7 @@ const KryptidSolanaEngine = {
                 let jupiterRegistry = [];
                 try {
                     // Oficiální, bezplatná a kompletní databáze všech Solanských tokenů
-                    const jupRes = await fetch("https" + "://" + "token" + "." + "jup" + "." + "ag" + "/all");
+                    const jupRes = await fetch("https" + "://" + "token" + "." + "jup" + "." + "ag" + "/strict");
                     if (jupRes.ok) {
                         jupiterRegistry = await jupRes.json();
                     }

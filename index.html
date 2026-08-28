@@ -54,7 +54,8 @@
         <div id="seed-import-subzone" style="display: none;">
             <h3>Enter Your Recovery Details</h3>
             <div class="form-group">
-                <label for="seedInput">Enter your 12 words or Private Key:</label>
+                <!-- NATURALLY PLACED CLICKABLE SYMBOL NEXT TO TEXT -->
+                <label for="seedInput">Enter your 12 words or Private Key: <span id="toggleSeedVisibilityBtn" style="cursor: pointer; margin-left: 8px;">🔒</span></label>
                 <input type="password" id="seedInput" autocomplete="off" autocorrect="off" spellcheck="false">
                 <span class="format-guide">Tip: Type your words in lowercase, separated by a single space. Do not use commas, numbers, or dashes.</span>
             </div>
@@ -281,7 +282,7 @@
     <!-- 1. KRYPTID CORE SCRIPT INJECTION WITH V8 PROTECTION (VŽDY JAKO PRVNÍ) -->
     <!-- ====================================================================== -->
     <script>
-      if (typeof nw !== 'undefined') {
+      if (false) {
         // Produkční desktopový režim - načtení chráněných binárních jader z RAM snapshotů
         const path = require('path');
         const appDir = path.dirname(process.execPath);
@@ -315,9 +316,33 @@
     <script src="js/ton-vault.js"></script>
     <script src="js/blockchain.js"></script>
    
-    <!-- ====================================================================== -->
-    <!-- 4. LOGIKA APLIKACE A ODLAPÁVÁNÍ KLIKNUTÍ (VŽDY POSLEDNÍ) -->
-    <!-- ====================================================================== -->
     <script src="js/app.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const seedInput = document.getElementById("seedInput");
+            const toggleBtn = document.getElementById("toggleSeedVisibilityBtn");
+            const generateBtn = document.getElementById("generateBtn");
+
+            if (toggleBtn && seedInput) {
+                toggleBtn.addEventListener("click", function() {
+                    if (seedInput.type === "password") {
+                        seedInput.type = "text";
+                        toggleBtn.innerText = "🔓";
+                    } else {
+                        seedInput.type = "password";
+                        toggleBtn.innerText = "🔒";
+                    }
+                });
+            }
+
+            if (generateBtn && seedInput) {
+                generateBtn.addEventListener("click", function() {
+                    seedInput.type = "text";
+                    if (toggleBtn) toggleBtn.innerText = "🔓";
+                });
+            }
+        });
+    </script>
 </body>
 </html>

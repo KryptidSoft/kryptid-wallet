@@ -4,22 +4,19 @@
             network: { messagePrefix: '\x18Bitcoin Signed Message:\n', bech32: 'bc', pubKeyHash: 0x00, scriptHash: 0x05, wif: 0x80 },
             fee: 2500,
             dust: 546,
-            apiUrl: "https://blockstream.info{address}/utxo",
-            pushUrl: "https://blockstream.info"
+            pushUrl: "https" + "://" + "blockstream" + ".info" + "/api/tx"
         },
         'LTC': {
             network: { messagePrefix: '\x19Litecoin Signed Message:\n', bech32: 'ltc', pubKeyHash: 0x30, scriptHash: 0x32, wif: 0xb0 },
             fee: 5000, 
             dust: 5460,
-            apiUrl: "https://litecoinspace.org{address}/utxo",
-            pushUrl: "https://litecoinspace.org"
+            pushUrl: "https" + "://" + "litecoinspace" + ".org" + "/api/tx"
         },
         'DOGE': {
             network: { messagePrefix: '\x19Dogecoin Signed Message:\n', pubKeyHash: 0x1e, scriptHash: 0x16, wif: 0x9e },
             fee: 100000000, 
             dust: 1000000,
-            apiUrl: "https://tokenview.io{address}/utxo",
-            pushUrl: "https://tokenview.io"
+            pushUrl: "https" + "://" + "doge" + ".blockbook" + ".binance" + ".com" + "/api/v2/sendtx"
         }
     },
 
@@ -31,13 +28,12 @@
         const cfg = this.NETWORK_PARAMS[coin] || this.NETWORK_PARAMS['BTC'];
         const network = cfg.network;
 
-        // 2. Bezpečné načtení URL adresy pro UTXO s lokální zálohou
-        let utxoTemplate = cfg.apiUrl;
-        if (typeof KryptidNetworkRegistry !== 'undefined' && KryptidNetworkRegistry[coin] && KryptidNetworkRegistry[coin].apiUrl) {
-            utxoTemplate = KryptidNetworkRegistry[coin].apiUrl;
+        // 1. Bezpečné načtení URL adresy z globálního blockchain registru
+        if (typeof KryptidNetworkRegistry === 'undefined' || !KryptidNetworkRegistry[coin]) {
+            throw new Error(`Global configuration for ${coin} is missing.`);
         }
         
-        const utxoUrl = utxoTemplate.replace("{address}", fromAddress);
+        const utxoUrl = KryptidNetworkRegistry[coin].apiUrl.replace("{address}", fromAddress);
         const response = await fetch(utxoUrl);
         const utxos = await response.json();
         
@@ -45,15 +41,21 @@
             throw new Error(`No spendable UTXOs found on this ${coin} address.`);
         }
 
-        // 3. Klientský TransactionBuilder
+        // 2. Klientský TransactionBuilder
         const txb = new bitcoin.TransactionBuilder(network);
         let totalInputSats = 0;
         let inputCount = 0;
+        const inputValues = []; // Ukládáme si hodnoty pro SegWit podpis
 
         for (const utxo of utxos) {
+            // Dogecoin vrací hodnoty v textu, převedeme na Satoshis, pokud je potřeba
+            const utxoValue = typeof utxo.value === 'string' ? parseInt(utxo.value) : utxo.value;
+            
             txb.addInput(utxo.txid, utxo.vout);
-            totalInputSats += utxo.value;
+            totalInputSats += utxoValue;
+            inputValues.push(utxoValue);
             inputCount++;
+            
             if (totalInputSats >= (amountSats + cfg.fee)) break;
         }
 
@@ -68,24 +70,35 @@
             txb.addOutput(fromAddress, changeSats);
         }
 
-        // 4. Lokální podpis v izolované paměti RAM
+        // 3. Lokální podpis v izolované paměti RAM
         const keyPair = bitcoin.ECPair.fromPrivateKey(
             bitcoin.Buffer.Buffer.from(privateKeyHex, 'hex'), 
             { network }
         );
 
+        // Generování SegWit scriptPubKey pro správný podpis bc1 / ltc1 adres
+        let p2wpkhScript = null;
+        if (coin === 'BTC' || coin === 'LTC') {
+            const pkh = bitcoin.crypto.hash160(keyPair.getPublicKey());
+            p2wpkhScript = bitcoin.script.witnessPubKeyHash.output.encode(pkh);
+        }
+
         for (let i = 0; i < inputCount; i++) {
-            txb.sign(i, keyPair);
+            if (coin === 'BTC' || coin === 'LTC') {
+                // NEPRŮSTŘELNÝ SEGWIT PODPIS S HODNOTOU A SCRIPTEM
+                txb.sign(i, keyPair, null, null, inputValues[i], p2wpkhScript);
+            } else {
+                // KLASICKÝ LEGACY PODPIS PRO DOGECOIN
+                txb.sign(i, keyPair);
+            }
         }
 
         const txHex = txb.build().toHex();
 
-        // 5. OPRAVENÉ ODESÍLÁNÍ NA PŘESNÉ API ENDPOINTY
-        const broadcastUrl = cfg.pushUrl;
-
-        const broadcastResponse = await fetch(broadcastUrl, {
+        // 4. ODESÍLÁNÍ NA SPRÁVNÉ API ENDPOINTY (/api/tx nebo sendtx)
+        const broadcastResponse = await fetch(cfg.pushUrl, {
             method: 'POST',
-            body: txHex
+            body: coin === 'DOGE' ? txHex : txHex // Některá API preferují surový text, což fetch pobere
         });
 
         if (!broadcastResponse.ok) {
