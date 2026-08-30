@@ -115,6 +115,7 @@
         clearTxError();
 
         // Spuštění univerzálního agregátoru zůstatků a cen
+		val = null;
         await BlockchainService.fetchAndDisplayBalances();
     });
 
@@ -152,6 +153,7 @@
             document.getElementById('seedInput').value = decrypted;
             document.getElementById('loadWalletBtn').click();
             document.getElementById('masterPasswordUnlock').value = '';
+			decrypted = null;
         }
     });
     // Button: Option B - Destructive Logout (Plně dynamické promazání RAM a UI cache)
