@@ -38,8 +38,9 @@ const BlockchainService = {
         let cryptoPricesInFiat = {};
         try {
             const activeCoins = Object.keys(KryptidNetworkRegistry).join(",");
-            const apiHost = "://cryptocompare.com";
-            const url = `https://${apiHost}/data/pricemulti?fsyms=${activeCoins}&tsyms=${selectedFiat}`;
+            // FIX: Odstraněna lomítka a přidána správná subdoména min-api
+            const apiHost = "min-api" + "." + "cryptocompare" + "." + "com";
+            const url = "https" + "://" + apiHost + "/data/pricemulti?fsyms=" + activeCoins + "&tsyms=" + selectedFiat;
             
             const priceRes = await fetch(url);
             const rawPrices = await priceRes.json();
@@ -92,19 +93,38 @@ const BlockchainService = {
                     
                     // C: Zpracování pro TRON (TRX)
                     else if (config.type === "TRON") {
-                        if (window.TronWeb) {
-                            const tronWeb = new TronWeb({ fullHost: config.rpcUrl });
-                            const balanceSun = await tronWeb.trx.getBalance(address);
-                            calculatedAmount = balanceSun / 1000000;
+                        let balanceSun = 0;
+                        
+                        // FIX: Ošetření případu, kdy je knihovna dostupná pod window.tronWeb (malé t)
+                        if (window.tronWeb && typeof window.tronWeb.trx !== 'undefined') {
+                            balanceSun = await window.tronWeb.trx.getBalance(address);
+                        } 
+                        // Záložní varianta, pokud je dostupný velký konstruktor
+                        else if (window.TronWeb) {
+                            try {
+                                const tronInstance = new TronWeb({ fullHost: config.rpcUrl });
+                                balanceSun = await tronInstance.trx.getBalance(address);
+                            } catch (e) {
+                                console.error("TronWeb instantiation failed:", e);
+                            }
                         }
+                        
+                        // Přepočet jednotek Sun na TRX podle decimals v konfiguraci
+                        calculatedAmount = parseFloat(balanceSun) / Math.pow(10, config.decimals);
                     }
                     
                     // D: Zpracování pro TON (Toncoin)
                     else if (config.type === "TON") {
                         if (window.TonWeb) {
-                            const tonWeb = new TonWeb(new TonWeb.HttpProvider(config.rpcUrl));
-                            const balanceNano = await tonWeb.provider.getBalance(address);
-                            calculatedAmount = parseInt(balanceNano) / Math.pow(10, config.decimals);
+                            // FIX: Ignorujeme nefunkční config.rpcUrl a vynutíme stabilní TON endpoint přes skládání řetězců
+                            const verifiedTonRpc = "https:" + "//" + "toncenter.com" + "/api/v2/jsonRPC";
+                            const tonWeb = new TonWeb(new TonWeb.HttpProvider(verifiedTonRpc));
+                            
+                            // Bezpečné asynchronní stažení zůstatku
+                            const balanceResult = await tonWeb.provider.getBalance(address);
+                            const balanceNano = balanceResult ? balanceResult.toString() : "0";
+                            
+                            calculatedAmount = parseFloat(balanceNano) / Math.pow(10, config.decimals);
                         }
                     }
                     

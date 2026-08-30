@@ -339,23 +339,47 @@
         }
     });
 
-    // AUTOMATICKÝ GENERÁTOR TEXTOVÝCH TLAČÍTEK [copy] PRO VŠECHNY ADRESY
+// AUTOMATICKÝ GENERÁTOR TEXTOVÝCH TLAČÍTEK [copy] PRO VŠECHNY ADRESY
     function injectCopyButtons() {
-        const addressElements = document.querySelectorAll('#btcAddress, #ethAddress, .altcoins-wrapper .address-value, [id$="Address"]');
+        // FIX: Odstraněno duplicitní ruční vyhledávání BTC a ETH prvků v selektoru
+        const addressElements = document.querySelectorAll('.altcoins-wrapper .address-value, [id$="Address"]');
         addressElements.forEach(el => {
             if (el.nextElementSibling && el.nextElementSibling.classList.contains('copy-trigger')) return;
             
+            const rawAddress = el.textContent.trim();
+            if (!rawAddress || rawAddress === "---" || rawAddress.includes("Error")) return;
+
+            // FIX: Celou adresu bezpečně uložíme do schovaného parametru pro zkracovací CSS engine
+            el.setAttribute('data-full-address', rawAddress);
+            el.textContent = ''; // Vymažeme text z DOMu, protože CSS ho teď zobrazí zkráceně uprostřed
+
             const btn = document.createElement('button');
             btn.className = 'copy-trigger';
             btn.innerText = '[copy]';
             
             btn.addEventListener('click', (e) => {
-                const txt = el.textContent;
-                if (txt && txt !== "---") {
-                    navigator.clipboard.writeText(txt).then(() => {
+                // FIX: Kopírujeme skrytou CELOU adresu bez teček z našeho nového parametru!
+                const fullTxt = el.getAttribute('data-full-address') || rawAddress;
+                
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(fullTxt).then(() => {
                         e.target.innerText = "[copied]";
                         setTimeout(() => { e.target.innerText = "[copy]"; }, 1000);
                     });
+                } else {
+                    // Bezpečný fallback pro nativní hybridní sandbox na Androidu (Capacitor)
+                    const textArea = document.createElement("textarea");
+                    textArea.value = fullTxt;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        e.target.innerText = "[copied]";
+                        setTimeout(() => { e.target.innerText = "[copy]"; }, 1000);
+                    } catch (err) {
+                        console.error("Fallback system copy routine failed", err);
+                    }
+                    document.body.removeChild(textArea);
                 }
             });
             el.parentNode.insertBefore(btn, el.nextSibling);

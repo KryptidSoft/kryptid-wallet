@@ -234,29 +234,41 @@ button:active {
     align-items: center;
     font-size: 0.9rem;
 }
-
-/* Horní řádek karty (Adresa) */
+/* Primitivní a stoprocentně funkční srovnání adres a tlačítek */
 .address-row {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-    padding-bottom: 0.4rem;
-    margin-bottom: 0.4rem; /* Těsné, přesné spojení se zůstatkem */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.address-row strong {
-    color: #00ffcc;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-#btcAddress, #ethAddress {
-    color: #94a3b8;
+[id$="Address"] {
     font-family: monospace;
-    font-size: 0.85rem;       /* Mírně menší krypto písmo */
-    white-space: nowrap;      /* Vynutí zobrazení na jednom řádku */
+    color: #94a3b8;
+    white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;  /* Pokud je adresa obří, elegantně ji zkrátí třemi tečkami ... */
-    max-width: 220px;         /* Bezpečné maximum, aby karta držela tvar */
+    text-overflow: ellipsis; /* Přidá tři tečky na konec dlouhé adresy */
+    max-width: 200px;        /* Pevná šířka, aby adresa netlačila do tlačítka */
+}
+
+.address-row button {
+    flex-shrink: 0;          /* Tlačítko se nikdy nezmenší ani neuteče */
+}
+
+/* Styl pro textové tlačítko copy, aby sedělo hned vedle adresy */
+.copy-trigger {
+    background-color: transparent;
+    color: #64748b;
+    font-size: 0.78rem;
+    padding: 0 0 0 6px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: none;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.copy-trigger:hover {
+    color: #00ffcc;
 }
 
 /* Spodní řádek karty (Zůstatek) */

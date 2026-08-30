@@ -11,8 +11,10 @@
         const ethNode = "https://" + "ethereum-rpc" + ".publicnode.com";
         const bscNode = "https://" + "bsc-rpc" + ".publicnode.com";
         const tonNode = "https://" + "ton.access" + ".orbs.network";
+        const dogeNode = "https://" + "doge.blockbook" + ".binance.com";
+        const tonCenter = "https://" + "toncenter" + ".com";
         
-        const cspRules = `default-src 'self' https://github.io; style-src 'self' 'unsafe-inline'; connect-src 'self' ${ethNode} ${bscNode} ${tonNode} https://trongrid.io https://api.mainnet-beta.solana.com https://blockstream.info https://litecoinspace.org https://chain.so https://min-api.cryptocompare.com https://api.1inch.dev https://unpkg.com https://api.github.com; script-src 'self' 'unsafe-inline' https://unpkg.com https://github.io;`;
+        const cspRules = `default-src 'self' https://github.io; style-src 'self' 'unsafe-inline'; connect-src 'self' ${ethNode} ${bscNode} ${tonNode} ${dogeNode} ${tonCenter} https://trongrid.io https://api.mainnet-beta.solana.com https://blockstream.info https://litecoinspace.org https://chain.so https://min-api.cryptocompare.com https://api.1inch.dev https://unpkg.com https://api.github.com; script-src 'self' 'unsafe-inline' https://unpkg.com https://github.io;`;
         
         const metaTag = document.createElement('meta');
         metaTag.httpEquiv = "Content-Security-Policy";
@@ -103,7 +105,7 @@
                 </select>
 				
                 <div class="vault-lock-box">
-                    <l<strong>Total Balance:</strong>
+                    <span><strong>Total Balance:</strong></span>
                     <div id="total-balance-value" class="crypto-amount">---</div>
                 </div>
             </div>
@@ -266,12 +268,7 @@
             </div>
         </div>
 
-    </div>
-	
-	            </div>
-        </div>
-
-    </div>
+    </div> <!-- End of #main-wallet-dashboard -->
 
     <!-- DOKONALE LADÍCÍ WEB3 PATIČKA -->
     <footer class="wallet-footer">
@@ -282,18 +279,29 @@
     <!-- 1. KRYPTID CORE SCRIPT INJECTION WITH V8 PROTECTION (VŽDY JAKO PRVNÍ) -->
     <!-- ====================================================================== -->
     <script>
+      // Sequential loading cascade to prevent race conditions between modules
+      function loadScript(src, callback) {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = callback;
+        document.head.appendChild(script);
+      }
+
       if (false) {
-        // Produkční desktopový režim - načtení chráněných binárních jader z RAM snapshotů
+        // Production desktop mode - loading protected binary cores from RAM snapshots
         const path = require('path');
         const appDir = path.dirname(process.execPath);
 
-        // Načtení z absolutní, stoprocentně bezpečné cesty
+        // Loading from an absolute, 100% secure path
         nw.Window.get().evalNWBin(null, path.join(appDir, 'main.bin'));
         nw.Window.get().evalNWBin(null, path.join(appDir, 'js/wallet-engine.bin'));
       } else {
-        // Vývojářský a mobilní režim (stoprocentně bezpečný pro Android)
-        const s1 = document.createElement('script'); s1.src = 'main.js'; s1.async = false; document.head.appendChild(s1);
-        const s2 = document.createElement('script'); s2.src = 'js/wallet-engine.js'; s2.async = false; document.head.appendChild(s2);
+        // Developer and mobile mode (100% secure for Android)
+        loadScript('main.js', function() {
+          loadScript('js/wallet-engine.js', function() {
+            console.log("Kryptid Core Engines successfully initialized.");
+          });
+        });
       }
     </script>
 
@@ -318,12 +326,17 @@
    
     <script src="js/app.js"></script>
 
+    <!-- ====================================================================== -->
+    <!-- 4. UNIFIED UI CONTROLLER & DOM BRIDGE -->
+    <!-- ====================================================================== -->
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const seedInput = document.getElementById("seedInput");
             const toggleBtn = document.getElementById("toggleSeedVisibilityBtn");
             const generateBtn = document.getElementById("generateBtn");
+            const loadWalletBtn = document.getElementById("loadWalletBtn");
 
+            // Toggle seed visibility (Password / Plain text)
             if (toggleBtn && seedInput) {
                 toggleBtn.addEventListener("click", function() {
                     if (seedInput.type === "password") {
@@ -336,10 +349,31 @@
                 });
             }
 
+            // Automatically reveal input field when generating a new seed
             if (generateBtn && seedInput) {
                 generateBtn.addEventListener("click", function() {
                     seedInput.type = "text";
                     if (toggleBtn) toggleBtn.innerText = "🔓";
+                });
+            }
+
+            // Backup trigger for Open Wallet if app.js fails to switch views
+            if (loadWalletBtn) {
+                loadWalletBtn.addEventListener("click", function() {
+                    console.log("Open Wallet clicked. Verifying DOM states...");
+                    const onboarding = document.getElementById('onboarding-screen');
+                    const dashboard = document.getElementById('main-wallet-dashboard');
+                    
+                    if (seedInput && seedInput.value.trim() !== "") {
+                        if (onboarding && dashboard) {
+                            // Enforce dashboard view state transition
+                            onboarding.style.display = 'none';
+                            dashboard.style.display = 'block';
+                            console.log("Dashboard view state transition enforced by inline script.");
+                        }
+                    } else {
+                        alert("Seed phrase is empty! Please generate or type your 12 words first.");
+                    }
                 });
             }
         });

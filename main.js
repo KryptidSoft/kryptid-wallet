@@ -1,4 +1,31 @@
-﻿// Globální stav v RAM inicializovaný přes app.js nebo lokálně
+﻿// Ensure global environment parity between Desktop (NW.js) and Mobile (Android Capacitor)
+if (typeof window !== 'undefined' && typeof window.Buffer === 'undefined') {
+    window.Buffer = {
+        from: function(input, encoding) {
+            let Uint8Result;
+            if (encoding === 'hex') {
+                const cleanInput = input.startsWith('0x') ? input.substring(2) : input;
+                const rawBytes = ethers.utils.arrayify('0x' + cleanInput);
+                Uint8Result = new Uint8Array(rawBytes);
+            } else if (input instanceof Uint8Array) {
+                Uint8Result = new Uint8Array(input);
+            } else if (Array.isArray(input)) {
+                Uint8Result = new Uint8Array(input);
+            } else {
+                Uint8Result = new TextEncoder().encode(input);
+            }
+            
+            // FIX: Vstříkneme metodu slice kompatibilní s voláním bitcoinjs
+            Uint8Result.slice = function(start, end) {
+                return window.Buffer.from(this.subarray(start, end));
+            };
+            
+            return Uint8Result;
+        }
+    };
+}
+
+// Globální stav v RAM inicializovaný přes app.js nebo lokálně
 var _secureState = _secureState || { seedPhrase: null, ethPrivateKey: null, btcPrivateKey: null, privateKeys: {} };
 
 const CryptoVault = {
@@ -126,33 +153,94 @@ const CryptoVault = {
             }
             return rawBytes;
         };
-
-        // Rekonstrukce výstupního datového balíku pro UI vrstvu
-        const derivedOutputs = {
+		
+		const derivedOutputs = {
             addresses: {
+                // FIX: Native SegWit Bitcoin address computed via your local verified toBech32 engine (NO BUFFER NEEDED)
                 'BTC': this.toBech32("bc", getRipemdBytes(keys['BTC'])),
+
+                // FIX: Native SegWit Litecoin address computed via your local verified toBech32 engine (NO BUFFER NEEDED)
                 'LTC': this.toBech32("ltc", getRipemdBytes(keys['LTC'])),
+                
                 'ETH': new ethers.Wallet(keys['ETH']).address,
                 'BNB': new ethers.Wallet(keys['BNB']).address,
                 
-                // REAL BASE58CHECK DOGECOIN ADDRESS DERIVATION
+                // FIX: Dogecoin Base58Check bez nutnosti externí bitcoinjs-lib knihovny
                 'DOGE': (() => {
-                    const kp = bitcoin.ECPair.fromPrivateKey(Buffer.from(keys['DOGE'].replace('0x',''), 'hex'));
-                    const { address } = bitcoin.payments.p2pkh({ pubkey: kp.publicKey, network: { messagePrefix: '\x19Dogecoin Signed Message:\n', bcless: 'doge', pubKeyHash: 0x1e, scriptHash: 0x16, wif: 0x9e } });
-                    return address;
+                    try {
+                        const cleanDoge = keys['DOGE'].startsWith('0x') ? keys['DOGE'] : '0x' + keys['DOGE'];
+                        const signingKey = new ethers.utils.SigningKey(cleanDoge);
+                        const compressedPublicKeyHex = signingKey.compressedPublicKey.replace('0x', '');
+                        const sha256Hash = CryptoJS.SHA256(CryptoJS.enc.Hex.parse(compressedPublicKeyHex));
+                        const ripemd160Hex = ethers.utils.ripemd160("0x" + sha256Hash.toString()).replace('0x', '');
+                        
+                        // Dogecoin prefix je 0x1e
+                        const payloadHex = "1e" + ripemd160Hex;
+                        const firstSha = ethers.utils.sha256(ethers.utils.arrayify("0x" + payloadHex));
+                        const secondSha = ethers.utils.sha256(ethers.utils.arrayify(firstSha));
+                        const checksum = secondSha.substring(2, 10);
+                        
+                        const finalHex = payloadHex + checksum;
+                        
+                        // Interní Base58 kódování pro převod na krypto adresu
+                        const digits = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+                        let num = BigInt("0x" + finalHex);
+                        let dogeAddress = "";
+                        while (num > 0n) {
+                            let remainder = num % 58n;
+                            num = num / 58n;
+                            dogeAddress = digits[Number(remainder)] + dogeAddress;
+                        }
+                        // Zachování prefixu 1 pro nulové bajty na začátku
+                        for (let i = 0; i < finalHex.length; i += 2) {
+                            if (finalHex.substring(i, i + 2) === "00") {
+                                dogeAddress = "1" + dogeAddress;
+                            } else {
+                                break;
+                            }
+                        }
+                        return dogeAddress;
+                    } catch (err) {
+                        console.error("Doge derivation crashed:", err);
+                        return "Error generating Doge";
+                    }
                 })(),
 
-                // REAL BASE58CHECK TRON ADDRESS DERIVATION FROM ETH/EVM PUBLIC KEY
+                // FIX: Tron Base58Check bez nutnosti externí bitcoinjs-lib knihovny
                 'TRX': (() => {
-                    const ethAddr = new ethers.Wallet(keys['TRX']).address;
-                    const cleanHex = "41" + ethAddr.substring(2); // TRON core prefix
-                    const hash1 = CryptoJS.SHA256(CryptoJS.enc.Hex.parse(cleanHex));
-                    const hash2 = CryptoJS.SHA256(hash1);
-                    const checksum = hash2.toString().substring(0, 8);
-                    return bitcoin.address.toBase58Check(Buffer.from(cleanHex, 'hex'), 0x41); // Or fallback to manual Base58 encoding if library differs
+                    try {
+                        const ethAddr = new ethers.Wallet(keys['TRX']).address;
+                        // Tron adresa začíná prefixem 0x41 (písmeno T)
+                        const cleanHex = "41" + ethAddr.substring(2).toLowerCase();
+                        
+                        const firstHash = ethers.utils.sha256(ethers.utils.arrayify("0x" + cleanHex));
+                        const secondHash = ethers.utils.sha256(ethers.utils.arrayify(firstHash));
+                        const checksum = secondHash.substring(2, 10);
+                        const finalHex = cleanHex + checksum;
+                        
+                        // Interní Base58 kódování pro převod na krypto adresu
+                        const digits = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+                        let num = BigInt("0x" + finalHex);
+                        let trxAddress = "";
+                        while (num > 0n) {
+                            let remainder = num % 58n;
+                            num = num / 58n;
+                            trxAddress = digits[Number(remainder)] + trxAddress;
+                        }
+                        for (let i = 0; i < finalHex.length; i += 2) {
+                            if (finalHex.substring(i, i + 2) === "00") {
+                                trxAddress = "1" + trxAddress;
+                            } else {
+                                break;
+                            }
+                        }
+                        return trxAddress;
+                    } catch (err) {
+                        console.error("Tron derivation crashed:", err);
+                        return "Error generating Tron";
+                    }
                 })(),
 
-                // TON and Solana call their dedicated subsystems...
                 'TON': window.KryptidTONEngine && typeof window.KryptidTONEngine.generateKeyPair === 'function' 
                     ? window.KryptidTONEngine.generateKeyPair(keys['TON']).address 
                     : "EQ" + keys['TON'].substring(2, 48),
@@ -167,6 +255,56 @@ const CryptoVault = {
         // Zpětná kompatibilita pro staré proměnné v paměti
         _secureState.ethPrivateKey = keys['ETH'];
         _secureState.btcPrivateKey = keys['BTC'];
+
+        // ==========================================
+        // 🛠️ FUNKČNÍ TYRKYSOVÁ TLAČÍTKA S INTERAKCÍ "COPIED!"
+        // ==========================================
+        if (derivedOutputs && derivedOutputs.addresses) {
+            Object.keys(derivedOutputs.addresses).forEach(coin => {
+                const addressEl = document.getElementById(coin.toLowerCase() + 'Address');
+                if (addressEl) {
+                    const currentAddr = derivedOutputs.addresses[coin];
+                    
+                    if (currentAddr.includes("Error") || currentAddr.includes("crashed")) {
+                        addressEl.textContent = currentAddr;
+                    } else {
+                        // 1. BEZPEČNÝ FORMÁT: Vytvoříme tvar XXXXXXXXX...XXXXXXXXX v HTML
+                        const startPart = currentAddr.substring(0, 9);
+                        const endPart = currentAddr.substring(currentAddr.length - 9);
+                        addressEl.textContent = startPart + "..." + endPart;
+                        
+                        // 2. TYRKYSOVÉ TLAČÍTKO: Smažeme staré a vytvoříme pravý HTML <button>
+                        const btnId = "copy-" + coin.toLowerCase();
+                        const oldBtn = document.getElementById(btnId);
+                        if (oldBtn) oldBtn.remove();
+                        
+                        const copyBtn = document.createElement('button');
+                        copyBtn.id = btnId;
+                        copyBtn.textContent = "Copy"; // Původní text na tlačítku
+                        
+                        // INTERAKCE A KOPÍROVÁNÍ PLNÉ ADRESY
+                        copyBtn.onclick = function(e) {
+                            e.stopPropagation(); // Zamezí prokliknutí na kartu assetu
+                            
+                            // Zkopíruje celou dlouhou adresu z paměti RAM, ne tu s tečkami
+                            navigator.clipboard.writeText(currentAddr);
+                            
+                            // Efekt změny textu na chvíli
+                            copyBtn.textContent = "Copied!";
+                            
+                            // Za 1.5 vteřiny vrátí text zpět na "Copy"
+                            setTimeout(() => {
+                                copyBtn.textContent = "Copy";
+                            }, 1500);
+                        };
+                        
+                        // Přilepíme tyrkysové tlačítko do řádku karty hned za adresu
+                        addressEl.parentNode.appendChild(copyBtn);
+                    }
+                }
+            });
+        }
+        // ==========================================
 
         return derivedOutputs;
     },
@@ -265,6 +403,16 @@ const CryptoVault = {
                 el.value = ''; // Clear display
             }
         });
+        
+        // ======================================================================
+        // 🛠️ ADDED VISUAL STATE RESET (Return to onboarding screen)
+        // ======================================================================
+        const onboarding = document.getElementById('onboarding-screen');
+        const dashboard = document.getElementById('main-wallet-dashboard');
+        if (onboarding && dashboard) {
+            dashboard.style.display = 'none';
+            onboarding.style.display = 'block';
+        }
         
         this.showStatus("RAM memory cleared. Safe logout enforced.");
     }
