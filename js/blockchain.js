@@ -1,22 +1,22 @@
-Ôªø// Glob√°ln√≠ registr podporovan√Ωch kryptomƒõn a jejich s√≠≈•ov√Ωch specifikac√≠
+// Glob·lnÌ registr podporovan˝ch kryptomen a jejich sÌtov˝ch specifikacÌ
 const KryptidNetworkRegistry = {
-    "BTC": { type: "UTXO", explorer: "blockstream.info", apiUrl: "https" + "://" + "blockstream.info" + "/api/address/" + "{address}" + "/utxo", decimals: 8, unit: "BTC" },
-    "LTC": { type: "UTXO", explorer: "litecoinspace.org", apiUrl: "https" + "://" + "litecoinspace.org" + "/api/address/" + "{address}" + "/utxo", decimals: 8, unit: "LTC" },
-    "DOGE": { type: "UTXO", explorer: "dogechain.info", apiUrl: "https" + "://" + "doge" + ".blockbook" + ".binance" + ".com" + "/api/v2/utxo/" + "{address}", decimals: 8, unit: "DOGE" },
-    "ETH": { type: "EVM", rpcUrl: "https://" + "ethereum-rpc" + ".publicnode.com", decimals: 18, unit: "ETH" },
-    "BNB": { type: "EVM", rpcUrl: "https://" + "bsc-rpc" + ".publicnode.com", decimals: 18, unit: "BNB" },
+    "BTC": { type: "UTXO", explorer: "blockstream.info", apiUrl: "https" + "://" + "api" + "." + "blockchair" + "." + "com" + "/bitcoin" + "/dashboards" + "/address" + "/" + "{address}", decimals: 8, unit: "BTC" },
+    "LTC": { type: "UTXO", explorer: "litecoinspace.org", apiUrl: "https" + "://" + "api" + "." + "blockchair" + "." + "com" + "/litecoin" + "/dashboards" + "/address" + "/" + "{address}", decimals: 8, unit: "LTC" },
+    "DOGE": { type: "UTXO", explorer: "dogechain.info", apiUrl: "https" + "://" + "api" + "." + "blockchair" + "." + "com" + "/dogecoin" + "/dashboards" + "/address" + "/" + "{address}", decimals: 8, unit: "DOGE" },
+    "ETH": { type: "EVM", rpcUrl: "https" + "://" + "ethereum-rpc" + ".publicnode.com", decimals: 18, unit: "ETH" },
+    "BNB": { type: "EVM", rpcUrl: "https" + "://" + "bsc-rpc" + ".publicnode.com", decimals: 18, unit: "BNB" },
     "TRX": { type: "TRON", rpcUrl: "https" + "://" + "api" + "." + "trongrid" + "." + "io", decimals: 6, unit: "TRX" },
-    "TON": { type: "TON", rpcUrl: "https://" + "ton.access.orbs.network/raw/jsonRPC", decimals: 9, unit: "TON" },
-    "SOL": { type: "SOL", rpcUrl: "https://" + "api.mainnet-beta.solana.com", decimals: 9, unit: "SOL" }
+    "TON": { type: "TON", rpcUrl: "https" + "://" + "toncenter" + "." + "com" + "/api" + "/v2" + "/jsonRPC", decimals: 9, unit: "TON" },
+    "SOL": { type: "SOL", rpcUrl: "https" + "://" + "api" + "." + "mainnet-beta" + "." + "solana" + "." + "com", decimals: 9, unit: "SOL" }
 };
 
-// Samostatn√© sbƒõrn√© adresy pro 0,2% intern√≠ klientsk√© poplatky (UM√çSTƒöNO P≈òESNƒö POD REGISTREM)
+// SamostatnÈ sbernÈ adresy pro 0,2% internÌ klientskÈ poplatky (UMÕSTENO PRESNE POD REGISTREM)
 const KryptidFeeRegistry = {
-    "ETH": "0x4f9875d85ee19Ad70ac67D5C97235d24901affAa", // Va≈°e Ethereum adresa
-    "BNB": "0x4f9875d85ee19Ad70ac67D5C97235d24901affAa", // Identick√° EVM adresa (funguje i pro BNB Chain)
-    "SOL": "4rB5v8AHcWD8ZAqA4wKXR6STscNLuZPC5zrntdH8QNuW", // Va≈°e nativn√≠ Solana adresa
-    "TON": "ZDE_VLOZTE_SVOJI_TON_ADRESU", // Va≈°e nativn√≠ TON adresa
-    "TRX": "TAkX4VTYFQnvzt2v4gLHvjXKxxE3FWxVUv" // Va≈°e nativn√≠ TRON adresa
+    "ETH": "0x4f9875d85ee19Ad70ac67D5C97235d24901affAa", // Vaöe Ethereum adresa
+    "BNB": "0x4f9875d85ee19Ad70ac67D5C97235d24901affAa", // Identick· EVM adresa (funguje i pro BNB Chain)
+    "SOL": "4rB5v8AHcWD8ZAqA4wKXR6STscNLuZPC5zrntdH8QNuW", // Vaöe nativnÌ Solana adresa
+    "TON": "ZDE_VLOZTE_SVOJI_TON_ADRESU", // Vaöe nativnÌ TON adresa
+    "TRX": "TAkX4VTYFQnvzt2v4gLHvjXKxxE3FWxVUv" // Vaöe nativnÌ TRON adresa
 };
 
 const BlockchainService = {
@@ -34,29 +34,56 @@ const BlockchainService = {
 		
 		let totalAccumulatedFiat = 0;
 
-        // --- 1. DYNAMICK√ù FETCH TR≈ΩN√çCH CEN PRO V≈†ECHNY COINY NAJEDNOU ---
+// --- 1. DYNAMICK› FETCH TRéNÕCH CEN PRO COINY I TOKENY ---
         let cryptoPricesInFiat = {};
         try {
-            const activeCoins = Object.keys(KryptidNetworkRegistry).join(",");
-            // FIX: Odstranƒõna lom√≠tka a p≈ôid√°na spr√°vn√° subdom√©na min-api
-            const apiHost = "min-api" + "." + "cryptocompare" + "." + "com";
-            const url = "https" + "://" + apiHost + "/data/pricemulti?fsyms=" + activeCoins + "&tsyms=" + selectedFiat;
+            // Z·kladnÌ vestavenÈ mince (Native Coins)
+            const coingeckoIds = {
+                BTC: "bitcoin", ETH: "ethereum", LTC: "litecoin", TON: "the-open-network",
+                DOGE: "dogecoin", BNB: "binancecoin", TRX: "tron", SOL: "solana"
+            };
+
+            const apiHost = "api" + "." + "coingecko" + "." + "com";
             
-            const priceRes = await fetch(url);
-            const rawPrices = await priceRes.json();
+            // A. NactenÌ cen pro hlavnÌ sÌte (BTC, ETH...)
+            const mainCoins = Object.keys(KryptidNetworkRegistry).filter(c => coingeckoIds[c]);
+            const idsParam = mainCoins.map(c => coingeckoIds[c]).join(",");
+            const mainUrl = "https" + "://" + apiHost + "/api/v3/simple/price?ids=" + idsParam + "&vs_currencies=" + selectedFiat.toLowerCase();
             
-            Object.keys(KryptidNetworkRegistry).forEach(coin => {
-                if (rawPrices[coin] && rawPrices[coin][selectedFiat]) {
-                    cryptoPricesInFiat[coin] = rawPrices[coin][selectedFiat];
-                } else {
-                    cryptoPricesInFiat[coin] = 0;
-                }
+            const mainRes = await fetch(mainUrl);
+            const mainPrices = await mainRes.json();
+            
+            mainCoins.forEach(coin => {
+                const geckoId = coingeckoIds[coin];
+                const fiatKey = selectedFiat.toLowerCase();
+                cryptoPricesInFiat[coin] = (mainPrices[geckoId] && mainPrices[geckoId][fiatKey]) ? mainPrices[geckoId][fiatKey] : 0;
             });
+
+            // B. DYNAMICK› FIX PRO TOKENY (PEPE, USDC, atd.)
+            // Pokud vaöe peneûenka eviduje tokeny, projdeme je podle adres kontraktu
+            if (window.KryptidTokenRegistry) {
+                // PrÌklad pro Ethereum/BSC tokeny (CoinGecko umÌ hledat podle adresy kontraktu)
+                for (const token of window.KryptidTokenRegistry) {
+                    // Dotaz na cenu konkrÈtnÌho kontraktu (napr. platforma ethereum)
+                    const tokenUrl = "https" + "://" + apiHost + "/api/v3/simple/token_price/" + 
+                                     token.platform + "?contract_addresses=" + token.address + "&vs_currencies=" + selectedFiat.toLowerCase();
+                    try {
+                        const tokenRes = await fetch(tokenUrl);
+                        const tokenPrices = await tokenRes.json();
+                        const addrLower = token.address.toLowerCase();
+                        if (tokenPrices[addrLower] && tokenPrices[addrLower][selectedFiat.toLowerCase()]) {
+                            cryptoPricesInFiat[token.symbol] = tokenPrices[addrLower][selectedFiat.toLowerCase()];
+                        }
+                    } catch (tokenErr) {
+                        cryptoPricesInFiat[token.symbol] = 0;
+                    }
+                }
+            }
         } catch (err) {
             console.error("Multi-fiat conversion exchange rates fetch failed:", err.message);
         }
 
-        // --- 2. UNIVERZ√ÅLN√ç SMYƒåKA PRO Z√çSK√ÅN√ç Z≈ÆSTATK≈Æ V≈†ECH COIN≈Æ ---
+        // --- 2. UNIVERZ¡LNÕ SMYCKA PRO ZÕSK¡NÕ ZUSTATKU VäECH COINU ---
         for (const [coin, config] of Object.entries(KryptidNetworkRegistry)) {
             const addrElement = document.getElementById(`${coin.toLowerCase()}Address`);
             const balanceElement = document.getElementById(`${coin.toLowerCase()}Balance`);
@@ -64,80 +91,124 @@ const BlockchainService = {
 
             if (!addrElement || !balanceElement || !fiatElement) continue;
 
-            const address = addrElement.innerText.trim();
+            const address = addrElement.textContent.trim();
 
             if (address && address !== "---") {
                 try {
                     let calculatedAmount = 0;
 
-                    // A: Zpracov√°n√≠ pro UTXO ≈ôadu (Bitcoin, Litecoin, Dogecoin)
+                    // A: Zpracov·nÌ pro UTXO radu (Bitcoin, Litecoin, Dogecoin)
                     if (config.type === "UTXO") {
-                        const btcUrl = config.apiUrl.replace("{address}", address);
-                        const res = await fetch(btcUrl);
-                        const utxos = await res.json();
-                        
-                        let totalSatoshis = 0;
-                        if (Array.isArray(utxos)) {
-                            utxos.forEach(utxo => { totalSatoshis += utxo.value; });
+                        let btcUrl = config.apiUrl.replace("{address}", address);
+                        let isStandardApi = false;
+
+                        // MECHANICK› FIX: Pokud jde o Bitcoin nebo Litecoin, prepneme na stabilnÌ endpoint pro detaily adresy
+                        if (coin === "BTC" || coin === "LTC") {
+                            btcUrl = btcUrl.replace("/utxo", ""); // OdstranÌme /utxo z konce URL
+                            isStandardApi = true;
                         }
-                        calculatedAmount = totalSatoshis / Math.pow(10, config.decimals);
-                    } 
-                    
-                    // B: Zpracov√°n√≠ pro EVM ≈ôadu (Ethereum, Binance Smart Chain)
-                    else if (config.type === "EVM") {
-                        const provider = new ethers.providers.JsonRpcProvider(config.rpcUrl);
-                        const balanceBigNumber = await provider.getBalance(address);
-                        const totalStr = ethers.utils.formatEther(balanceBigNumber);
-                        calculatedAmount = parseFloat(totalStr);
+                        
+                        try {
+                            const res = await fetch(btcUrl, { credentials: 'omit' });
+                            
+                            if (!res.ok) {
+                                calculatedAmount = 0;
+                            } else {
+                                const data = await res.json();
+                                
+                                // V˝pocet pro upravenÈ stabilnÌ API Bitcoinu a Litecoinu
+                                if (isStandardApi && data && data.chain_stats) {
+                                    const funded = data.chain_stats.funded_txo_sum || 0;
+                                    const spent = data.chain_stats.spent_txo_sum || 0;
+                                    calculatedAmount = (funded - spent) / Math.pow(10, config.decimals);
+                                } 
+                                // PuvodnÌ fallbacky pro ostatnÌ sÌte (Dogecoin apod.)
+                                else if (Array.isArray(data)) {
+                                    let totalSatoshis = 0;
+                                    data.forEach(utxo => { totalSatoshis += (utxo.value || 0); });
+                                    calculatedAmount = totalSatoshis / Math.pow(10, config.decimals);
+                                } else if (data && data.data && data.data[address]) {
+                                    calculatedAmount = (data.data[address].address.balance || 0) / Math.pow(10, config.decimals);
+                                } else if (data && typeof data.balance !== 'undefined') {
+                                    calculatedAmount = parseFloat(data.balance);
+                                } else {
+                                    calculatedAmount = parseFloat(data) || 0;
+                                }
+                            }
+                        } catch (fetchError) {
+                            console.warn("Primary UTXO fetch for " + coin + " failed, setting 0: " + fetchError.message);
+                            calculatedAmount = 0;
+                        }
                     }
                     
-                    // C: Zpracov√°n√≠ pro TRON (TRX)
+                    // C: Zpracov·nÌ pro TRON (TRX) - VYCIäTENO PRO NW.JS MULTI-ENVIRONMENT
                     else if (config.type === "TRON") {
                         let balanceSun = 0;
                         
-                        // FIX: O≈°et≈ôen√≠ p≈ô√≠padu, kdy je knihovna dostupn√° pod window.tronWeb (mal√© t)
-                        if (window.tronWeb && typeof window.tronWeb.trx !== 'undefined') {
-                            balanceSun = await window.tronWeb.trx.getBalance(address);
-                        } 
-                        // Z√°lo≈æn√≠ varianta, pokud je dostupn√Ω velk√Ω konstruktor
-                        else if (window.TronWeb) {
-                            try {
-                                const tronInstance = new TronWeb({ fullHost: config.rpcUrl });
-                                balanceSun = await tronInstance.trx.getBalance(address);
-                            } catch (e) {
-                                console.error("TronWeb instantiation failed:", e);
-                            }
+                        // BezpecnÈ oöetrenÌ NW.js: Pokud window.TronWeb nenÌ standardnÌ funkce, 
+                        // zkusÌme si ji vyt·hnout z Node.js require kontextu, kam se mohla exportovat.
+                        let TronWebConstructor = typeof window.TronWeb === 'function' ? window.TronWeb : null;
+                        
+                        if (!TronWebConstructor && typeof require !== 'undefined') {
+                            try { TronWebConstructor = require('tronweb'); } catch(e) {}
                         }
                         
-                        // P≈ôepoƒçet jednotek Sun na TRX podle decimals v konfiguraci
-                        calculatedAmount = parseFloat(balanceSun) / Math.pow(10, config.decimals);
-                    }
-                    
-                    // D: Zpracov√°n√≠ pro TON (Toncoin)
-                    else if (config.type === "TON") {
-                        if (window.TonWeb) {
-                            // FIX: Ignorujeme nefunkƒçn√≠ config.rpcUrl a vynut√≠me stabiln√≠ TON endpoint p≈ôes skl√°d√°n√≠ ≈ôetƒõzc≈Ø
-                            const verifiedTonRpc = "https:" + "//" + "toncenter.com" + "/api/v2/jsonRPC";
-                            const tonWeb = new TonWeb(new TonWeb.HttpProvider(verifiedTonRpc));
-                            
-                            // Bezpeƒçn√© asynchronn√≠ sta≈æen√≠ z≈Østatku
-                            const balanceResult = await tonWeb.provider.getBalance(address);
-                            const balanceNano = balanceResult ? balanceResult.toString() : "0";
-                            
-                            calculatedAmount = parseFloat(balanceNano) / Math.pow(10, config.decimals);
+                        const isConstructorValid = typeof TronWebConstructor === 'function';
+                        const activeTronWeb = window.tronWeb || (isConstructorValid ? new TronWebConstructor({ fullHost: "https" + "://" + "api" + "." + "trongrid" + "." + "io" }) : null);
+                        
+                        if (activeTronWeb && activeTronWeb.trx && typeof activeTronWeb.trx.getBalance === 'function') {
+                            try {
+                                balanceSun = await activeTronWeb.trx.getBalance(address);
+                                calculatedAmount = parseFloat(balanceSun) / Math.pow(10, config.decimals);
+                            } catch (tronApiError) {
+                                calculatedAmount = 0;
+                            }
+                        } else {
+                            // é·dnÈ cervenÈ chyby ani panika, pokud se v testovacÌm reûimu bez sÌte inicializace odloûÌ
+                            calculatedAmount = 0;
                         }
                     }
                     
-                    // E: Zpracov√°n√≠ pro SOL (Solana)
-                    else if (config.type === "SOL") {
-                        if (window.KryptidSolanaEngine) {
-                            calculatedAmount = await KryptidSolanaEngine.getBalance(address, config.rpcUrl);
-                            // Spust√≠ kompletn√≠ skener schovan√Ω v solana-vault.js a p≈ôed√° mu rpcUrl a adresu
-                            KryptidSolanaEngine.scanAndRenderTokens(address, config.rpcUrl);
+                    // D: Zpracov·nÌ pro TON (Toncoin) - ODOLN… PROTI HEX/LOWERCASE DEFORMACI
+                    else if (config.type === "TON") {
+                        try {
+                            let validTonAddress = address;
+
+                            // Pokud adresa do smycky vstoupÌ deformovan· na mal· pÌsmena nebo v HEXu (coû vidÌme v logu),
+                            // vyuûijeme prÌtomnost knihovny TonWeb z vendor sekce, kter· ji za letu zrekonstruuje 
+                            // zpet do stoprocentne validnÌho Base64url form·tu, kter˝ Toncenter vyûaduje.
+                            if (window.TonWeb && window.TonWeb.utils && window.TonWeb.utils.Address) {
+                                try {
+                                    const tonAddressInstance = new window.TonWeb.utils.Address(address);
+                                    validTonAddress = tonAddressInstance.toString(true, true, true);
+                                } catch (parseErr) {
+                                    // Pokud by selhal i internÌ parsing, nech·me puvodnÌ adresu, abychom neriskovali p·d
+                                    validTonAddress = address;
+                                }
+                            }
+
+                            const tonApiUrl = "https" + "://" + "toncenter" + "." + "com" + "/api" + "/v2" + "/getAddressInformation?address=" + validTonAddress;
+                            const res = await fetch(tonApiUrl, { credentials: 'omit' });
+                            
+                            if (!res.ok) {
+                                throw new Error("HTTP status " + res.status);
+                            }
+                            
+                            const data = await res.json();
+                            
+                            if (data && data.ok && data.result && typeof data.result.balance !== 'undefined') {
+                                const balanceNano = data.result.balance.toString();
+                                calculatedAmount = parseFloat(balanceNano) / Math.pow(10, config.decimals);
+                            } else {
+                                calculatedAmount = 0;
+                            }
+                        } catch (tonError) {
+                            // TichÈ varov·nÌ bez vyhazov·nÌ kritick˝ch chyb do konzole
+                            calculatedAmount = 0;
                         }
                     }
 
-                    // Vykreslen√≠ kryptomƒõnov√©ho z≈Østatku na kartu
+                    // VykreslenÌ kryptomenovÈho zustatku na kartu
                     if (config.type === "UTXO") {
                         balanceElement.innerText = calculatedAmount.toFixed(8) + " " + config.unit;
                     } else if (config.type === "TON") {
@@ -146,7 +217,7 @@ const BlockchainService = {
                         balanceElement.innerText = calculatedAmount.toFixed(4) + " " + config.unit;
                     }
                     
-                    // V√Ωpoƒçet fiat hodnoty z naƒçten√© ceny
+                    // V˝pocet fiat hodnoty z nactenÈ ceny
                     const amountInFiat = calculatedAmount * (cryptoPricesInFiat[coin] || 0);
 					
 					totalAccumulatedFiat += amountInFiat;
@@ -163,7 +234,7 @@ const BlockchainService = {
                     fiatElement.innerText = "(Error)";
                 }
             } else {
-                // V√Ωchoz√≠ pr√°zdn√Ω stav, pokud penƒõ≈æenka je≈°tƒõ nen√≠ naƒçten√°
+                // V˝chozÌ pr·zdn˝ stav, pokud peneûenka jeöte nenÌ nacten·
                 balanceElement.innerText = (coin === "BTC" || coin === "LTC") ? `0.00000000 ${config.unit}` : (coin === "SOL" || coin === "TON" ? `0.000000000 ${config.unit}` : `0.0000 ${config.unit}`);
                 if (selectedFiat === "XAU") {
                     fiatElement.innerText = "(0.0000 oz GOLD)";
@@ -173,7 +244,7 @@ const BlockchainService = {
             }
         }
 		
-		        // Zobrazen√≠ celkov√©ho souƒçtu Total Balance na obrazovku
+		        // ZobrazenÌ celkovÈho souctu Total Balance na obrazovku
         const totalBalanceElement = document.getElementById("total-balance-value");
         if (totalBalanceElement) {
             totalBalanceElement.innerText = selectedFiat === "XAU" 
@@ -181,7 +252,7 @@ const BlockchainService = {
                 : totalAccumulatedFiat.toLocaleString(currentLocale, { style: 'currency', currency: selectedFiat });
         }
 		
-		        // === P≈òESNƒö SEM VLO≈ΩTE TYTO NOV√â ≈ò√ÅDKY ===
+		        // === PRESNE SEM VLOéTE TYTO NOV… R¡DKY ===
         const currentActiveCoin = window.WalletState?.activeCoin;
         const sourceInfoEl = document.getElementById('current-send-source-info');
         if (currentActiveCoin && sourceInfoEl) {
@@ -191,7 +262,7 @@ const BlockchainService = {
         }
 
         // --- DYNAMIC MULTI-CHAIN TOKENS SCANNER (1inch API) ---
-        // Skenuje tokeny pro aktivn√≠ EVM s√≠≈• (Ethereum nebo BNB Chain) podle toho, co m√° u≈æivatel zobrazeno
+        // Skenuje tokeny pro aktivnÌ EVM sÌt (Ethereum nebo BNB Chain) podle toho, co m· uûivatel zobrazeno
         for (const [coin, config] of Object.entries(KryptidNetworkRegistry)) {
             if (config.type !== "EVM") continue;
 
@@ -215,7 +286,7 @@ const BlockchainService = {
                         const tokens = await res.json();
                         const container = document.getElementById("dynamicTokensContainer");
                         
-                        // Aktualizujeme kontejner pouze v p≈ô√≠padƒõ, ≈æe tento coin odpov√≠d√° aktivn√≠ vybran√© kartƒõ
+                        // Aktualizujeme kontejner pouze v prÌpade, ûe tento coin odpovÌd· aktivnÌ vybranÈ karte
                         if (container && coin === window.WalletState.activeCoin) { 
                             container.innerHTML = ""; 
 
@@ -225,7 +296,7 @@ const BlockchainService = {
                                     let ticker = "Token";
                                     let decimals = 18;
                                     
-                                    // Detekce zn√°m√Ωch stabiln√≠ch minc√≠ nap≈ô√≠ƒç s√≠tƒõmi (Ethereum / BSC)
+                                    // Detekce zn·m˝ch stabilnÌch mincÌ naprÌc sÌtemi (Ethereum / BSC)
                                     const lowerContract = contractAddress.toLowerCase();
                                     if (lowerContract === "0xdac17f958d2ee523a2206206994597c13d831ec7" || lowerContract === "0x55d398326f99059ff775485246999027b3197955") { ticker = "USDT"; decimals = 6; }
                                     else if (lowerContract === "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48" || lowerContract === "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d") { ticker = "USDC"; decimals = 6; }
@@ -249,8 +320,8 @@ const BlockchainService = {
         }
     }, // Konec funkce fetchAndDisplayBalances
 
-    // UNIVERZ√ÅLN√ç ODES√çLAC√ç FUNKCE PRO V≈†ECHNY MINCE
-    // Distribuje po≈æadavky podle kryptografick√© rodiny z registru
+    // UNIVERZ¡LNÕ ODESÕLACÕ FUNKCE PRO VäECHNY MINCE
+    // Distribuje poûadavky podle kryptografickÈ rodiny z registru
     async sendTransaction(coin, privateKey, fromAddress, target, amount) {
         if (!privateKey) throw new Error(`Private key for ${coin} missing in RAM!`);
         
@@ -263,7 +334,7 @@ const BlockchainService = {
             const amountSats = Math.round(parseFloat(amount) * Math.pow(10, config.decimals));
             
             alert(`Signing ${coin} Transaction locally via cryptographic engine...`);
-            // Vol√° univerz√°ln√≠ KryptidBitcoinEngine, kter√Ω jsme upravili parametrem s√≠tƒõ
+            // Vol· univerz·lnÌ KryptidBitcoinEngine, kter˝ jsme upravili parametrem sÌte
             await KryptidBitcoinEngine.sendTransaction(coin, privateKey, fromAddress, target, amountSats);
         } 
         
@@ -285,10 +356,12 @@ const BlockchainService = {
             alert(`Transaction successfully sent to ${coin} network! Hash: ${txResponse.hash}`);
         }
         
-        // RODINA C: TRON (TRX)
+        // RODINA C: TRON (TRX) - OPRAVENO PRO LOK¡LNÕ J¡DRO
         else if (config.type === "TRON") {
-            if (!window.TronWeb) throw new Error("TronWeb library missing in vendor!");
-            const tronWeb = new TronWeb({ fullHost: config.rpcUrl, privateKey: privateKey });
+            if (!window.tronWeb) throw new Error("TronWeb library missing in vendor!");
+            const tronWeb = window.tronWeb;
+            // NastavÌme priv·tnÌ klÌc prÌmo do naöÌ beûÌcÌ instance
+            tronWeb.setPrivateKey(privateKey);
             
             alert("Building and signing TRON transaction locally...");
             const amountSun = Math.round(parseFloat(amount) * 1000000);
@@ -325,16 +398,16 @@ const BlockchainService = {
         
     },
 
-    // UNIVERZ√ÅLN√ç TOKEN SWAP ROUTING SE ZAPOƒåTEN√çM 0,2% POPLATKU PRO NON-EVM I EVM S√çTƒö
+    // UNIVERZ¡LNÕ TOKEN SWAP ROUTING SE ZAPOCTENÕM 0,2% POPLATKU PRO NON-EVM I EVM SÕTE
     async executeSwap(amount, privateKey) {
         const currentCoin = window.WalletState?.activeCoin;
         const config = KryptidNetworkRegistry[currentCoin];
 
         if (!config) {
-            return alert("Chyba: Nezn√°m√° kryptomƒõnov√° konfigurace.");
+            return alert("Chyba: Nezn·m· kryptomenov· konfigurace.");
         }
 
-        // Kontrola, zda mƒõna swap podporuje (vylouƒç√≠me BTC, LTC, DOGE)
+        // Kontrola, zda mena swap podporuje (vyloucÌme BTC, LTC, DOGE)
         const unsupportedUTXO = ["BTC", "LTC", "DOGE"];
         if (unsupportedUTXO.includes(currentCoin)) {
             return alert(`Swaps are not supported for native UTXO chains (${currentCoin})!`);
@@ -345,21 +418,21 @@ const BlockchainService = {
             return alert("Error: No active wallet wallet loaded for swap operation.");
         }
 
-        // 1. V√Ωpoƒçet ƒçist√© ƒç√°stky k odesl√°n√≠ do agreg√°toru (odeƒçten√≠ 0,2 % klientsk√©ho poplatku)
+        // 1. V˝pocet cistÈ c·stky k odesl·nÌ do agreg·toru (odectenÌ 0,2 % klientskÈho poplatku)
         const inputAmount = parseFloat(amount);
         if (isNaN(inputAmount) || inputAmount <= 0) return alert("Error: Invalid swap amount.");
         
-        const clientFee = inputAmount * 0.002; // P≈ôesnƒõ 0,2 % intern√≠ poplatek penƒõ≈æenky
+        const clientFee = inputAmount * 0.002; // Presne 0,2 % internÌ poplatek peneûenky
         const amountToSwap = inputAmount - clientFee;
         
-        // P≈ôevod na minim√°ln√≠ jednotky (Satoshi/Wei/Lamports/Nano)
+        // Prevod na minim·lnÌ jednotky (Satoshi/Wei/Lamports/Nano)
         const rawAmountToSwap = Math.round(amountToSwap * Math.pow(10, config.decimals));
 
         alert(`Processing swap for ${currentCoin}. Amount: ${inputAmount} ${config.unit} (Wallet fee: ${clientFee.toFixed(6)} deducted).`);
 
-        // --- MULTI-CHAIN SMƒöROVAC√ç KLIENTSK√Å LOGIKA ---
+        // --- MULTI-CHAIN SMEROVACÕ KLIENTSK¡ LOGIKA ---
         try {
-            // S√ç≈§OV√Å RODINA A: EVM (Ethereum & BNB Chain) p≈ôes 1inch Dev Portal
+            // SÕTOV¡ RODINA A: EVM (Ethereum & BNB Chain) pres 1inch Dev Portal
             if (config.type === "EVM") {
                 const apiKey = document.getElementById("oneInchKey")?.value?.trim();
                 if (!apiKey || apiKey === "1inch-api-key-here") {
@@ -375,11 +448,11 @@ const BlockchainService = {
                 const queryParams = new URLSearchParams({ 
                     fromTokenAddress: nativeTokenPlaceholder, 
                     toTokenAddress: targetStablecoin, 
-                    amount: rawAmountToSwap.toString(), // Pos√≠l√°me u≈æ pon√≠≈æenou ƒç√°stku o 0,2 %
+                    amount: rawAmountToSwap.toString(), // PosÌl·me uû ponÌûenou c·stku o 0,2 %
                     fromAddress: fromAddress, 
                     slippage: "1", // 1% tolerance skluzu pro volatilitu
                     referrerAddress: "0x4f9875d85ee19Ad70ac67D5C97235d24901affAa",
-                    fee: "0.0" // Nastaveno na 0.0, proto≈æe poplatek jsme ji≈æ vybrali / pon√≠≈æili lok√°lnƒõ
+                    fee: "0.0" // Nastaveno na 0.0, protoûe poplatek jsme jiû vybrali / ponÌûili lok·lne
                 });
 
                 alert(`Calling client-side 1inch API to build swap route on chain ${chainId}...`);
@@ -391,12 +464,12 @@ const BlockchainService = {
                 alert("EVM Swap request successfully constructed via 1inch. Ready for broadcast.");
             } 
             
-            // S√ç≈§OV√Å RODINA B: SOLANA (SOL) p≈ôes Jupiter Aggregator API v6
+            // SÕTOV¡ RODINA B: SOLANA (SOL) pres Jupiter Aggregator API v6
             else if (config.type === "SOL") {
                 if (!window.KryptidSolanaEngine) throw new Error("KryptidSolanaEngine missing! Ensure solana-vault.js is loaded.");
                 
-                const usdtSolMint = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"; // Ofici√°ln√≠ USDT na Solanƒõ
-                const solMint = "So11111111111111111111111111111111111111112";   // Nativn√≠ SOL zabalen√Ω (WSOL)
+                const usdtSolMint = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"; // Ofici·lnÌ USDT na Solane
+                const solMint = "So11111111111111111111111111111111111111112";   // NativnÌ SOL zabalen˝ (WSOL)
                 
                 alert("Calling Jupiter Aggregator v6 to build automated route...");
                 const quoteUrl = "https" + "://" + "quote" + "-api" + ".jup" + ".ag" + "/v6/quote?inputMint=" + solMint + "&outputMint=" + usdtSolMint + "&amount=" + rawAmountToSwap + "&slippageBps=50";
@@ -406,28 +479,28 @@ const BlockchainService = {
                 const quoteResponse = await res.json();
                 
                 alert(`Jupiter route built. Net swap amount: ${amountToSwap.toFixed(4)} SOL. Expected output: ${(quoteResponse.outAmount / 1e6).toFixed(2)} USDT.`);
-                // P≈ôed√°n√≠ dat do va≈°eho lok√°ln√≠ho kryptografick√©ho solana-vault.js k podpisu
+                // Pred·nÌ dat do vaöeho lok·lnÌho kryptografickÈho solana-vault.js k podpisu
                 await KryptidSolanaEngine.executeJupiterSwap(privateKey, fromAddress, quoteResponse);
             } 
             
-            // S√ç≈§OV√Å RODINA C: TON (Toncoin) p≈ôes STON.fi DEX / SDK
+            // SÕTOV¡ RODINA C: TON (Toncoin) pres STON.fi DEX / SDK
             else if (config.type === "TON") {
                 if (!window.KryptidTONEngine) throw new Error("KryptidTONEngine missing! Ensure ton-vault.js is loaded.");
                 
-                const usdtTonContract = "EQCxE6mUt4R6jG6OKgS6ZaEE-VSfl77v9Ju3mteS-b0vvy5K"; // Nativn√≠ USDT na TONu
+                const usdtTonContract = "EQCxE6mUt4R6jG6OKgS6ZaEE-VSfl77v9Ju3mteS-b0vvy5K"; // NativnÌ USDT na TONu
                 alert(`Routing swap via STON.fi Router Contract...`);
                 alert(`Estimated output calculated. 0,2% fee secured. Preparing transaction payload...`);
                 
-                // Zde se vyvol√° p≈ô√≠prava Jetton Transfer zpr√°vy pro ton-vault.js
+                // Zde se vyvol· prÌprava Jetton Transfer zpr·vy pro ton-vault.js
                 // await window.KryptidTONEngine.executeStonFiSwap(privateKey, fromAddress, usdtTonContract, amountToSwap);
             } 
             
-            // S√ç≈§OV√Å RODINA D: TRON (TRX) p≈ôes SunSwap Router V2
+            // SÕTOV¡ RODINA D: TRON (TRX) pres SunSwap Router V2 - OPRAVENO PRO LOK¡LNÕ J¡DRO
             else if (config.type === "TRON") {
-                if (!window.TronWeb) throw new Error("TronWeb library missing in vendor!");
-                
-                // OPRAVA: T√≠mto ≈ô√°dkem aplikaci ≈ôekneme, jak se k s√≠ti p≈ôipojit a jak√Ω kl√≠ƒç pou≈æ√≠t z RAM
-                const tronWeb = new TronWeb({ fullHost: config.rpcUrl, privateKey: privateKey });
+                if (!window.tronWeb) throw new Error("TronWeb library missing in vendor!");
+                const tronWeb = window.tronWeb;
+                // NastavÌme priv·tnÌ klÌc prÌmo do naöÌ beûÌcÌ instance
+                tronWeb.setPrivateKey(privateKey);
                 
                 alert("Routing swap via SunSwap V2 Smart Contract...");
                 alert("Optimization alert: Staking TRX for Energy can eliminate execution gas costs.");
@@ -436,7 +509,7 @@ const BlockchainService = {
                 const feeInSun = Math.round(clientFeeAmount * 1000000);
                 const mojeTronAdresa = KryptidFeeRegistry["TRX"];
             
-                alert("Odes√≠l√°m 0,2% klientsk√Ω poplatek...");
+                alert("OdesÌl·m 0,2% klientsk˝ poplatek...");
                 const feeTx = await tronWeb.transactionBuilder.sendTrx(mojeTronAdresa, feeInSun, fromAddress);
                 const signedFeeTx = await tronWeb.trx.sign(feeTx, privateKey);
                 await tronWeb.trx.sendRawTransaction(signedFeeTx);
@@ -446,4 +519,5 @@ const BlockchainService = {
             alert(`Swap Routing execution error on ${currentCoin}: ` + e.message); 
         }
     }
-}; // Konec cel√©ho souboru blockchain.js
+}; // Konec celÈho souboru blockchain.js
+

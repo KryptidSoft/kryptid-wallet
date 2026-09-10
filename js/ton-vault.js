@@ -30,8 +30,10 @@ window.KryptidTONEngine = {
             
             // Vytvoření standardní peněženky verze v4R2 (momentální Web3 standard pro TON)
             const tonweb = new TonWeb();
-            const WalletClass = tonweb.wallet.all['v4r2'];
-            const wallet = new WalletClass(tonweb.provider, {
+            
+            // OPRAVENO: Správný způsob inicializace v4R2 peněženky v TonWeb
+            const wallet = tonweb.wallet.create({
+                category: 'v4r2',
                 publicKey: keyPair.publicKey
             });
             

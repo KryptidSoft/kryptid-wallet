@@ -69,6 +69,54 @@
 
         const accounts = CryptoVault.deriveKeys(validatedSeed);
         
+        // ======================================================================
+        // SPRÁVNÁ MECHANICKÁ OPRAVA: ZÍSKÁNÍ SKUTEČNÉHO HEX SEEDU PRO SOL A TON
+        // ======================================================================
+        try {
+            // Protože validatedSeed je text (12 slov), musíme z něj získat čistý 64-bajtový hex seed.
+            // Pokud vaše knihovna CryptoVault má metodu pro převod slov na seed hex (např. mnemonicToSeedSync), 
+            // použijeme ji. Pokud ne, v naprosté většině BIP-39 peněženek se dá hex seed vytáhnout 
+            // přímo ze stavu nebo dočasně zkonvertovat. Předpokládejme, že CryptoVault.deriveKeys 
+            // interně pracuje s hex seedem, nebo ho můžeme odvodit z CryptoVault core:
+            
+            // Hledáme čistý hexadecimální seed. Pokud ho neumíme vytáhnout přímo, 
+            // zkusíme bezpečně zavolat solana a ton vaulty pouze tehdy, pokud jim předáme správný hex.
+            // Pokud váš CryptoVault interně ukládá hex seed do paměti, použijeme ho:
+            let masterSeedHex = "";
+            if (typeof CryptoVault.mnemonicToSeedHex === 'function') {
+                masterSeedHex = CryptoVault.mnemonicToSeedHex(validatedSeed);
+            } else if (window.CryptoVault && _secureState.masterSeedHex) {
+                masterSeedHex = _secureState.masterSeedHex;
+            } else {
+                // OPRAVENO: Použijeme vestavěnou funkci ethers.js pro převod slov na hex seed
+                const fullSeedHex = ethers.utils.mnemonicToSeed(validatedSeed);
+                // Odstraníme úvodní '0x', aby vaše Solana/TON enginy dostaly čistý hex string
+                masterSeedHex = fullSeedHex.startsWith('0x') ? fullSeedHex.substring(2) : fullSeedHex;
+            }
+
+            if (masterSeedHex) {
+                // 1. Solana real-time oprava
+                if (window.KryptidSolanaEngine && typeof window.KryptidSolanaEngine.generateKeyPairFromSeed === 'function') {
+                    const solanaData = window.KryptidSolanaEngine.generateKeyPairFromSeed(masterSeedHex);
+                    if (solanaData && solanaData.address) {
+                        accounts.addresses['SOL'] = solanaData.address;
+                        accounts.privateKeys['SOL'] = solanaData.privateKey;
+                    }
+                }
+
+                // 2. TON real-time oprava
+                if (window.KryptidTONEngine && typeof window.KryptidTONEngine.deriveKeys === 'function') {
+                    const tonData = await window.KryptidTONEngine.deriveKeys(masterSeedHex);
+                    if (tonData && tonData.address) {
+                        accounts.addresses['TON'] = tonData.address;
+                        accounts.privateKeys['TON'] = tonData.privateKey;
+                    }
+                }
+            }
+        } catch (derivationBridgeError) {
+            console.warn("Bridge derivation failed, falling back to layout defaults: " + derivationBridgeError.message);
+        }
+       
         // DYNAMICKÉ MAPOVÁNÍ ADRES A BLOCK EXPLORERŮ (Žádný hardcoding)
         Object.keys(accounts.addresses).forEach(coin => {
             const coinLower = coin.toLowerCase();
@@ -261,35 +309,34 @@
             if (universalSendBtn) universalSendBtn.innerText = `Send ${selectedCoin}`;
             
             // 4. DYNAMICKÝ UNIVERZÁLNÍ ENGLISH PLACEHOLDER PRO STOVKY MINCÍ
-            // Vymaže nekonečné podmínky a automaticky detekuje rodinu z registru (blockchain.js)
-            const txTargetInput = document.getElementById('txTarget');
+           const txTargetInput = document.getElementById('txTarget');
             if (txTargetInput && KryptidNetworkRegistry[selectedCoin]) {
                 const familyType = KryptidNetworkRegistry[selectedCoin].type;
                 
                 if (familyType === 'EVM') {
-                    // Tento řádek obslouží ETH, BNB a všech 500+ ERC-20/BEP-20 tokenů na světě
-                    txTargetInput.setAttribute('placeholder', `Enter recipient's 0x hex address for ${selectedCoin}...`);
+                    txTargetInput.setAttribute('placeholder', "Enter recipient's 0x hex address for " + selectedCoin + "...");
                 } else if (familyType === 'UTXO') {
-                    // Obslouží BTC, LTC, DOGE a jakékoli budoucí UTXO forky
                     const sample = selectedCoin === 'BTC' ? 'bc1...' : selectedCoin === 'LTC' ? 'ltc1...' : 'standard format';
-                    txTargetInput.setAttribute('placeholder', `Enter recipient's ${selectedCoin} address (${sample})...`);
+                    txTargetInput.setAttribute('placeholder', "Enter recipient's " + selectedCoin + " address (" + sample + ")...");
                 } else if (familyType === 'TRON') {
-                    txTargetInput.setAttribute('placeholder', `Enter recipient's TRON format address starting with T...`);
+                    txTargetInput.setAttribute('placeholder', "Enter recipient's TRON format address starting with T...");
                 } else if (familyType === 'SOL') {
-                    txTargetInput.setAttribute('placeholder', `Enter recipient's Base58 Solana address (e.g. 7xKX...)...`);
+                    txTargetInput.setAttribute('placeholder', "Enter recipient's Base58 Solana address (e.g. 7xKX...)...");
+                } else if (familyType === 'TON') {
+                    // === FIX: Tato nová větev zajistí správný anglický placeholder pro TON ===
+                    txTargetInput.setAttribute('placeholder', "Enter recipient's Base64url TON address starting with EQ...");
                 }
             } else if (txTargetInput) {
-                // Generický záložní placeholder pro ERC-20 altcoiny, které se načtou dynamicky do kontejneru
-                txTargetInput.setAttribute('placeholder', `Enter recipient's 0x destination address for ${selectedCoin}...`);
+                txTargetInput.setAttribute('placeholder', "Enter recipient's 0x destination address for " + selectedCoin + "...");
             }
 
-			// 5. Inteligentní zobrazení swapu pro VŠECHNY sítě, které máte v blockchain.js implementované
-            const swapBtn = document.getElementById('swapBtn');
-            if (swapBtn) {
-                const supportedSwapCoins = ['ETH', 'BNB', 'TRX', 'SOL'];
-                const isSwapSupported = supportedSwapCoins.includes(selectedCoin);
-                swapBtn.style.display = isSwapSupported ? 'inline-block' : 'none';
-            }
+			// 5. Inteligentní zobrazení swapu pro VŠECHNY sítě
+			const swapBtn = document.getElementById('swapBtn');
+			if (swapBtn) {
+				const supportedSwapCoins = ['ETH', 'BNB', 'TRX', 'SOL'];
+				const isSwapSupported = supportedSwapCoins.includes(selectedCoin);
+				swapBtn.style.display = isSwapSupported ? 'inline-block' : 'none';
+			}
 
             
             // Vyčistit předchozí vstupy a chybové hlášky

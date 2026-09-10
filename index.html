@@ -11,15 +11,26 @@
         const ethNode = "https://" + "ethereum-rpc" + ".publicnode.com";
         const bscNode = "https://" + "bsc-rpc" + ".publicnode.com";
         const tonNode = "https://" + "ton.access" + ".orbs.network";
-        const dogeNode = "https://" + "doge.blockbook" + ".binance.com";
+        const dogeNode = "https://" + "doge.blockbook" + ".binance.com"; // Může zůstat pro budoucí účely
+        const blockchairNode = "https://" + "api.blockchair" + ".com"; // PRIDÁNO: Povolení pro bezpečné Blockchair dotazy
         const tonCenter = "https://" + "toncenter" + ".com";
+        const tonRpcNode = "https://" + "rpc.ton" + ".org";
         
-        const cspRules = `default-src 'self' https://github.io; style-src 'self' 'unsafe-inline'; connect-src 'self' ${ethNode} ${bscNode} ${tonNode} ${dogeNode} ${tonCenter} https://trongrid.io https://api.mainnet-beta.solana.com https://blockstream.info https://litecoinspace.org https://chain.so https://min-api.cryptocompare.com https://api.1inch.dev https://unpkg.com https://api.github.com; script-src 'self' 'unsafe-inline' https://unpkg.com https://github.io;`;
-        
+        const cspRules = `default-src 'self' https://github.io; style-src 'self' 'unsafe-inline'; connect-src 'self' ${ethNode} ${bscNode} ${tonNode} ${dogeNode} ${tonCenter} ${tonRpcNode} ` + "https" + "://" + "api" + "." + "blockchair" + "." + "com" + ` https://trongrid.io https://api.mainnet-beta.solana.com https://blockstream.info https://litecoinspace.org https://chain.so https://min-api.cryptocompare.com https://coingecko.com https://api.coingecko.com ` + "https" + "://" + "chainz" + "." + "cryptoid" + "." + "info" + ` https://api.1inch.dev https://unpkg.com https://api.github.com; script-src 'self' 'unsafe-inline' file: https://unpkg.com https://github.io; worker-src 'self' blob: https://unpkg.com;`;
+
         const metaTag = document.createElement('meta');
         metaTag.httpEquiv = "Content-Security-Policy";
         metaTag.content = cspRules;
         document.head.appendChild(metaTag);
+		
+const tronScript = document.createElement('script');
+tronScript.src = "js/vendor/tronweb.js";
+tronScript.onload = () => {
+    console.log("TronWeb Success.");
+    // Zde můžete případně inicializovat TronWeb, pokud to děláte globálně
+};
+document.head.appendChild(tronScript);
+
     </script>
 
     <!-- 2. TYTO STYLY NAČÍTÁME AŽ POD DIAGNOSTIKOU, ABY JE PROHLÍŽEČ NEBLOKOVAL -->
@@ -58,7 +69,8 @@
             <div class="form-group">
                 <!-- NATURALLY PLACED CLICKABLE SYMBOL NEXT TO TEXT -->
                 <label for="seedInput">Enter your 12 words or Private Key: <span id="toggleSeedVisibilityBtn" style="cursor: pointer; margin-left: 8px;">🔒</span></label>
-                <input type="password" id="seedInput" autocomplete="off" autocorrect="off" spellcheck="false">
+                <!-- ZMĚNĚNO NA TEXTAREA + PŘIDÁN STYL PRO SKRÝVÁNÍ TEXTU -->
+                <textarea id="seedInput" rows="3" autocomplete="off" autocorrect="off" spellcheck="false" style="width: 100%; resize: none; -webkit-text-security: disc;"></textarea>
                 <span class="format-guide">Tip: Type your words in lowercase, separated by a single space. Do not use commas, numbers, or dashes.</span>
             </div>
             <button id="loadWalletBtn">Open Wallet</button>
@@ -318,13 +330,13 @@
     <!-- ====================================================================== -->
     <!-- 3. ARCHITEKTONICKÉ A PODPISOVÉ VRSTVY PENĚŽENKY (VAULT ENGINES) -->
     <!-- ====================================================================== -->
-    <script src="js/security.js"></script>
-    <script src="js/utxo-vault.js"></script>
-    <script src="js/solana-vault.js"></script>
-    <script src="js/ton-vault.js"></script>
-    <script src="js/blockchain.js"></script>
+    <script src="js/security.js" defer></script>
+    <script src="js/utxo-vault.js" defer></script>
+    <script src="js/solana-vault.js" defer></script>
+    <script src="js/ton-vault.js" defer></script>
+    <script src="js/blockchain.js" defer></script>
    
-    <script src="js/app.js"></script>
+    <script src="js/app.js" defer></script>
 
     <!-- ====================================================================== -->
     <!-- 4. UNIFIED UI CONTROLLER & DOM BRIDGE -->
@@ -336,26 +348,28 @@
             const generateBtn = document.getElementById("generateBtn");
             const loadWalletBtn = document.getElementById("loadWalletBtn");
 
-            // Toggle seed visibility (Password / Plain text)
-            if (toggleBtn && seedInput) {
-                toggleBtn.addEventListener("click", function() {
-                    if (seedInput.type === "password") {
-                        seedInput.type = "text";
-                        toggleBtn.innerText = "🔓";
-                    } else {
-                        seedInput.type = "password";
-                        toggleBtn.innerText = "🔒";
-                    }
-                });
-            }
+// Opravené přepínání viditelnosti pro textarea
+if (toggleBtn && seedInput) {
+    toggleBtn.addEventListener("click", function() {
+        // Kontrola: pokud vlastnost NENÍ "disc" (je prázdná nebo "none"), text vidíme -> tak ho skryjeme
+        if (seedInput.style.webkitTextSecurity !== "disc") {
+            seedInput.style.webkitTextSecurity = "disc";
+            toggleBtn.innerText = "🔒";
+        } else {
+            seedInput.style.webkitTextSecurity = "none";
+            toggleBtn.innerText = "🔓";
+        }
+    });
+}
 
-            // Automatically reveal input field when generating a new seed
-            if (generateBtn && seedInput) {
-                generateBtn.addEventListener("click", function() {
-                    seedInput.type = "text";
-                    if (toggleBtn) toggleBtn.innerText = "🔓";
-                });
-            }
+// Opravené generování – vynutí zobrazení čistého textu a odemkne zámeček
+if (generateBtn && seedInput) {
+    generateBtn.addEventListener("click", function() {
+        seedInput.style.webkitTextSecurity = "none"; // Žádné tečky
+        if (toggleBtn) toggleBtn.innerText = "🔓";   // Odemčený zámek
+    });
+}
+
 
             // Backup trigger for Open Wallet if app.js fails to switch views
             if (loadWalletBtn) {
@@ -380,3 +394,4 @@
     </script>
 </body>
 </html>
+
