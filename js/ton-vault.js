@@ -37,7 +37,7 @@ window.KryptidTONEngine = {
                 publicKey: keyPair.publicKey
             });
             
-            // Získání uživatelské adresy v non-bounceable, user-friendly Base64url formátu
+            // Získání uživatelské adresy v non-bounceable, user-friendly Base64url formátu (začíná na UQ)
             const address = await wallet.getAddress();
             const nonBounceableAddress = address.toString(true, true, true);
 
@@ -62,9 +62,10 @@ window.KryptidTONEngine = {
         const secretKey = TonWeb.utils.hexToBytes(privateKeyHex);
         const publicKey = secretKey.slice(32, 64); // Ed25519 veřejný klíč je druhá polovina secretKey
 
-        // Inicializace peněženky v4R2 pro odeslání
-        const WalletClass = tonweb.wallet.all['v4r2'];
-        const wallet = new WalletClass(tonweb.provider, { publicKey: publicKey });
+        // OPRAVA: Správná přímá inicializace třídy peněženky v4R2 podle standardu TonWeb
+        const wallet = new TonWeb.wallet.v4R2(tonweb.provider, { 
+            publicKey: publicKey 
+        });
 
         // Načtení aktuálního sekvenčního čísla (seqno) z blockchainu kvůli ochraně proti replay útokům
         let seqno = 0;
@@ -94,8 +95,12 @@ window.KryptidTONEngine = {
         // Odeslání podepsaného balíčku (external message) do sítě přes RPC uzel
         const result = await transfer.send();
         
-        if (result && result['@type'] === 'ok') {
-            // TON nevrací hash okamžitě, vygenerujeme predikovaný hash zprávy jako identifikátor transakce
+        // OPRAVA: TonWeb vrací výsledek odeslání přímo. Kontrola stavu úspěšnosti:
+        if (result && result.id !== undefined) {
+            const query = await transfer.getQuery();
+            const cellHash = await query.hash();
+            return TonWeb.utils.bytesToHex(cellHash);
+        } else if (result && result['@type'] === 'ok') {
             const query = await transfer.getQuery();
             const cellHash = await query.hash();
             return TonWeb.utils.bytesToHex(cellHash);

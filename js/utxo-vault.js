@@ -41,17 +41,34 @@
             throw new Error(`No spendable UTXOs found on this ${coin} address.`);
         }
 
+        // PRE-INICIALIZACE KLÍČŮ A SEGWIT SKRIPTU (Nutné pro správné sestavení vstupů)
+        const keyPair = bitcoin.ECPair.fromPrivateKey(
+            bitcoin.Buffer.Buffer.from(privateKeyHex, 'hex'), 
+            { network }
+        );
+
+        let p2wpkhScript = null;
+        if (coin === 'BTC' || coin === 'LTC') {
+            const pkh = bitcoin.crypto.hash160(keyPair.getPublicKey());
+            p2wpkhScript = bitcoin.script.witnessPubKeyHash.output.encode(pkh);
+        }
+
         // 2. Klientský TransactionBuilder
         const txb = new bitcoin.TransactionBuilder(network);
         let totalInputSats = 0;
         let inputCount = 0;
-        const inputValues = []; // Ukládáme si hodnoty pro SegWit podpis
+        const inputValues = []; 
 
         for (const utxo of utxos) {
-            // Dogecoin vrací hodnoty v textu, převedeme na Satoshis, pokud je potřeba
             const utxoValue = typeof utxo.value === 'string' ? parseInt(utxo.value) : utxo.value;
             
-            txb.addInput(utxo.txid, utxo.vout);
+            // OPRAVA: Pro BTC a LTC musíme předat p2wpkhScript přímo do addInput, aby builder věděl, že jde o SegWit transakci
+            if (coin === 'BTC' || coin === 'LTC') {
+                txb.addInput(utxo.txid, utxo.vout, null, p2wpkhScript);
+            } else {
+                txb.addInput(utxo.txid, utxo.vout);
+            }
+            
             totalInputSats += utxoValue;
             inputValues.push(utxoValue);
             inputCount++;
@@ -71,22 +88,10 @@
         }
 
         // 3. Lokální podpis v izolované paměti RAM
-        const keyPair = bitcoin.ECPair.fromPrivateKey(
-            bitcoin.Buffer.Buffer.from(privateKeyHex, 'hex'), 
-            { network }
-        );
-
-        // Generování SegWit scriptPubKey pro správný podpis bc1 / ltc1 adres
-        let p2wpkhScript = null;
-        if (coin === 'BTC' || coin === 'LTC') {
-            const pkh = bitcoin.crypto.hash160(keyPair.getPublicKey());
-            p2wpkhScript = bitcoin.script.witnessPubKeyHash.output.encode(pkh);
-        }
-
         for (let i = 0; i < inputCount; i++) {
             if (coin === 'BTC' || coin === 'LTC') {
-                // NEPRŮSTŘELNÝ SEGWIT PODPIS S HODNOTOU A SCRIPTEM
-                txb.sign(i, keyPair, null, null, inputValues[i], p2wpkhScript);
+                // OPRAVA: Jako třetí parametr (redeemScript) musí u Native SegWitu zůstat null, hodnota je předána na 5. pozici
+                txb.sign(i, keyPair, null, null, inputValues[i]);
             } else {
                 // KLASICKÝ LEGACY PODPIS PRO DOGECOIN
                 txb.sign(i, keyPair);
@@ -98,7 +103,7 @@
         // 4. ODESÍLÁNÍ NA SPRÁVNÉ API ENDPOINTY (/api/tx nebo sendtx)
         const broadcastResponse = await fetch(cfg.pushUrl, {
             method: 'POST',
-            body: coin === 'DOGE' ? txHex : txHex // Některá API preferují surový text, což fetch pobere
+            body: txHex
         });
 
         if (!broadcastResponse.ok) {

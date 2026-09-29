@@ -323,8 +323,7 @@
                 } else if (familyType === 'SOL') {
                     txTargetInput.setAttribute('placeholder', "Enter recipient's Base58 Solana address (e.g. 7xKX...)...");
                 } else if (familyType === 'TON') {
-                    // === FIX: Tato nová větev zajistí správný anglický placeholder pro TON ===
-                    txTargetInput.setAttribute('placeholder', "Enter recipient's Base64url TON address starting with EQ...");
+                    txTargetInput.setAttribute('placeholder', "Enter recipient's Base64url TON address starting with UQ...");
                 }
             } else if (txTargetInput) {
                 txTargetInput.setAttribute('placeholder', "Enter recipient's 0x destination address for " + selectedCoin + "...");

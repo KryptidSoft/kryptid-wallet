@@ -63,12 +63,12 @@ const KryptidSolanaEngine = {
             const fromKeypair = solanaWeb3.Keypair.fromSecretKey(secretKey);
             const toPublicKey = new solanaWeb3.PublicKey(toAddress);
 
-            // 1. Získat nejnovější blockhash (místo nonce u ETH/BTC)
-            const { blockhash } = await connection.getLatestBlockhash();
+            // 1. Získat nejnovější blockhash a definovat strategii potvrzení
+            const latestBlockhash = await connection.getLatestBlockhash("confirmed");
 
             // 2. Sestavit transakci (SystemProgram.transfer)
             const transaction = new solanaWeb3.Transaction({
-                recentBlockhash: blockhash,
+                recentBlockhash: latestBlockhash.blockhash,
                 feePayer: fromKeypair.publicKey
             }).add(
                 solanaWeb3.SystemProgram.transfer({
@@ -78,11 +78,18 @@ const KryptidSolanaEngine = {
                 })
             );
 
-            // 3. Podepsat a odeslat v jednom kroku
-            const signature = await connection.sendTransaction(transaction, [fromKeypair]);
+            // 3. Podepsat a odeslat s robustním nastavením doručení
+            const signature = await connection.sendTransaction(transaction, [fromKeypair], {
+                skipPreflight: false,
+                preflightCommitment: "confirmed"
+            });
             
-            // 4. Potvrdit transakci
-            await connection.confirmTransaction(signature, "confirmed");
+            // 4. OPRAVA: Moderní, bezpečné potvrzení transakce podle aktuálního standardu web3.js
+            await connection.confirmTransaction({
+                signature: signature,
+                blockhash: latestBlockhash.blockhash,
+                lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
+            }, "confirmed");
             
             return signature;
         } catch (error) {
@@ -115,7 +122,6 @@ const KryptidSolanaEngine = {
             if (tokenAccounts.value.length > 0) {
                 let jupiterRegistry = [];
                 try {
-                    // Oficiální, bezplatná a kompletní databáze všech Solanských tokenů
                     const jupRes = await fetch("https" + "://" + "token" + "." + "jup" + "." + "ag" + "/strict");
                     if (jupRes.ok) {
                         jupiterRegistry = await jupRes.json();
@@ -127,15 +133,11 @@ const KryptidSolanaEngine = {
                 // Projdeme každý token, který uživatel reálně vlastní
                 tokenAccounts.value.forEach(accountInfo => {
                     const parsedData = accountInfo.account.data.parsed.info;
-                    const tokenMint = parsedData.mint; // Unikátní adresa kontraktu tokenu
+                    const tokenMint = parsedData.mint; 
                     const rawAmount = parsedData.tokenAmount.uiAmount;
                     
                     if (rawAmount > 0) {
-                        // Vyhledáme token v celosvětové databázi podle adresy kontraktu
                         const tokenMeta = jupiterRegistry.find(t => t.address === tokenMint);
-                        
-                        // JISTOTA VŠEHO: Pokud ho najdeme, vezmeme jeho reálný název. 
-                        // Pokud je to nová mince, vypíšeme zkrácenou adresu kontraktu.
                         let tokenTicker = tokenMeta ? tokenMeta.symbol : `Unknown (${tokenMint.substring(0, 4)}...)`;
                         
                         const p = document.createElement("div");
@@ -144,7 +146,6 @@ const KryptidSolanaEngine = {
                         p.style.alignItems = "center";
                         p.style.gap = "6px";
                         
-                        // Pokud má token v registru ikonu, dynamic ji vykreslíme vedle názvu
                         const imgHtml = tokenMeta && tokenMeta.logoURI 
                             ? `<img src="${tokenMeta.logoURI}" style="width:14px; height:14px; border-radius:50%;" onerror="this.style.display='none'">` 
                             : `•`;

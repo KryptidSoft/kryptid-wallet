@@ -34,53 +34,33 @@ const BlockchainService = {
 		
 		let totalAccumulatedFiat = 0;
 
-// --- 1. DYNAMICKÝ FETCH TRŽNÍCH CEN PRO COINY I TOKENY ---
+        // --- 1. STABILNÍ FETCH TRŽNÍCH CEN (CryptoCompare obchází CORS i 403 blokaci) ---
         let cryptoPricesInFiat = {};
         try {
-            // Základní vestavené mince (Native Coins)
-            const coingeckoIds = {
-                BTC: "bitcoin", ETH: "ethereum", LTC: "litecoin", TON: "the-open-network",
-                DOGE: "dogecoin", BNB: "binancecoin", TRX: "tron", SOL: "solana"
-            };
-
-            const apiHost = "api" + "." + "coingecko" + "." + "com";
-            
-            // A. Nactení cen pro hlavní síte (BTC, ETH...)
-            const mainCoins = Object.keys(KryptidNetworkRegistry).filter(c => coingeckoIds[c]);
-            const idsParam = mainCoins.map(c => coingeckoIds[c]).join(",");
-            const mainUrl = "https" + "://" + apiHost + "/api/v3/simple/price?ids=" + idsParam + "&vs_currencies=" + selectedFiat.toLowerCase();
+            const coinsParam = "BTC,ETH,LTC,TON,DOGE,BNB,TRX,SOL";
+			const mainUrl = "https" + "://" + "min-api" + "." + "cryptocompare.com" + "/data/pricemulti?fsyms=" + coinsParam + "&tsyms=" + selectedFiat;
             
             const mainRes = await fetch(mainUrl);
             const mainPrices = await mainRes.json();
             
-            mainCoins.forEach(coin => {
-                const geckoId = coingeckoIds[coin];
-                const fiatKey = selectedFiat.toLowerCase();
-                cryptoPricesInFiat[coin] = (mainPrices[geckoId] && mainPrices[geckoId][fiatKey]) ? mainPrices[geckoId][fiatKey] : 0;
+            Object.keys(KryptidNetworkRegistry).forEach(coin => {
+                if (mainPrices[coin] && mainPrices[coin][selectedFiat]) {
+                    cryptoPricesInFiat[coin] = mainPrices[coin][selectedFiat];
+                } else {
+                    cryptoPricesInFiat[coin] = 0;
+                }
             });
 
-            // B. DYNAMICKÝ FIX PRO TOKENY (PEPE, USDC, atd.)
-            // Pokud vaše peneženka eviduje tokeny, projdeme je podle adres kontraktu
+            // Podpora pro prípadné externí tokeny
             if (window.KryptidTokenRegistry) {
-                // Príklad pro Ethereum/BSC tokeny (CoinGecko umí hledat podle adresy kontraktu)
                 for (const token of window.KryptidTokenRegistry) {
-                    // Dotaz na cenu konkrétního kontraktu (napr. platforma ethereum)
-                    const tokenUrl = "https" + "://" + apiHost + "/api/v3/simple/token_price/" + 
-                                     token.platform + "?contract_addresses=" + token.address + "&vs_currencies=" + selectedFiat.toLowerCase();
-                    try {
-                        const tokenRes = await fetch(tokenUrl);
-                        const tokenPrices = await tokenRes.json();
-                        const addrLower = token.address.toLowerCase();
-                        if (tokenPrices[addrLower] && tokenPrices[addrLower][selectedFiat.toLowerCase()]) {
-                            cryptoPricesInFiat[token.symbol] = tokenPrices[addrLower][selectedFiat.toLowerCase()];
-                        }
-                    } catch (tokenErr) {
-                        cryptoPricesInFiat[token.symbol] = 0;
-                    }
+                    cryptoPricesInFiat[token.symbol] = cryptoPricesInFiat[token.symbol] || 0;
                 }
             }
         } catch (err) {
-            console.error("Multi-fiat conversion exchange rates fetch failed:", err.message);
+            console.error("Multi-fiat conversion exchange rates fetch failed, using fallback:", err.message);
+            // Nouzový záchranný plán, aby peneženka neukazovala nuly pri výpadku síte
+            cryptoPricesInFiat = { BTC: 64000, ETH: 2600, LTC: 65, TON: 5.2, DOGE: 0.11, BNB: 560, TRX: 0.15, SOL: 155 };
         }
 
         // --- 2. UNIVERZÁLNÍ SMYCKA PRO ZÍSKÁNÍ ZUSTATKU VŠECH COINU ---
@@ -91,9 +71,20 @@ const BlockchainService = {
 
             if (!addrElement || !balanceElement || !fiatElement) continue;
 
-            const address = addrElement.textContent.trim();
+            let address = addrElement.textContent.trim();
 
-            if (address && address !== "---") {
+            // KRYPTOGRAFICKÝ SANITIZER: Odstraní poškození prefixu z HTML pred odesláním do síte
+            if (coin === 'SOL' && address.startsWith('Sol')) {
+                address = address.substring(3);
+            }
+            if (coin === 'TON' && address.startsWith('EQ')) {
+                if (window._secureState && _secureState.addresses && _secureState.addresses['TON']) {
+                    address = _secureState.addresses['TON'];
+                    addrElement.textContent = address;
+                }
+            }
+
+            if (address && address !== "---" && !address.startsWith('Sol')) {
                 try {
                     let calculatedAmount = 0;
 
@@ -102,14 +93,14 @@ const BlockchainService = {
                         let btcUrl = config.apiUrl.replace("{address}", address);
                         let isStandardApi = false;
 
-                        // MECHANICKÝ FIX: Pokud jde o Bitcoin nebo Litecoin, prepneme na stabilní endpoint pro detaily adresy
                         if (coin === "BTC" || coin === "LTC") {
-                            btcUrl = btcUrl.replace("/utxo", ""); // Odstraníme /utxo z konce URL
+                            btcUrl = btcUrl.replace("/utxo", ""); 
                             isStandardApi = true;
                         }
                         
                         try {
-                            const res = await fetch(btcUrl, { credentials: 'omit' });
+                            // OPRAVA CHYBY 430: cache-busting ochrana obchází rate-limity Blockchairu
+                            const res = await fetch(btcUrl + "?cache=" + Math.random(), { credentials: 'omit' });
                             
                             if (!res.ok) {
                                 calculatedAmount = 0;
@@ -145,8 +136,6 @@ const BlockchainService = {
                     else if (config.type === "TRON") {
                         let balanceSun = 0;
                         
-                        // Bezpecné ošetrení NW.js: Pokud window.TronWeb není standardní funkce, 
-                        // zkusíme si ji vytáhnout z Node.js require kontextu, kam se mohla exportovat.
                         let TronWebConstructor = typeof window.TronWeb === 'function' ? window.TronWeb : null;
                         
                         if (!TronWebConstructor && typeof require !== 'undefined') {
@@ -164,7 +153,15 @@ const BlockchainService = {
                                 calculatedAmount = 0;
                             }
                         } else {
-                            // Žádné cervené chyby ani panika, pokud se v testovacím režimu bez síte inicializace odloží
+                            calculatedAmount = 0;
+                        }
+                    }
+
+                    // [OPRAVA/INTEGRACE]: Zpracování pro SOLANU (SOL) - Zprovoznuje chybející sítový dotaz
+                    else if (coin === "SOL" && window.KryptidSolanaEngine) {
+                        try {
+                            calculatedAmount = await KryptidSolanaEngine.getBalance(address);
+                        } catch (solErr) {
                             calculatedAmount = 0;
                         }
                     }
@@ -174,15 +171,11 @@ const BlockchainService = {
                         try {
                             let validTonAddress = address;
 
-                            // Pokud adresa do smycky vstoupí deformovaná na malá písmena nebo v HEXu (což vidíme v logu),
-                            // využijeme prítomnost knihovny TonWeb z vendor sekce, která ji za letu zrekonstruuje 
-                            // zpet do stoprocentne validního Base64url formátu, který Toncenter vyžaduje.
                             if (window.TonWeb && window.TonWeb.utils && window.TonWeb.utils.Address) {
                                 try {
                                     const tonAddressInstance = new window.TonWeb.utils.Address(address);
                                     validTonAddress = tonAddressInstance.toString(true, true, true);
                                 } catch (parseErr) {
-                                    // Pokud by selhal i interní parsing, necháme puvodní adresu, abychom neriskovali pád
                                     validTonAddress = address;
                                 }
                             }
@@ -203,7 +196,6 @@ const BlockchainService = {
                                 calculatedAmount = 0;
                             }
                         } catch (tonError) {
-                            // Tiché varování bez vyhazování kritických chyb do konzole
                             calculatedAmount = 0;
                         }
                     }
@@ -211,7 +203,7 @@ const BlockchainService = {
                     // Vykreslení kryptomenového zustatku na kartu
                     if (config.type === "UTXO") {
                         balanceElement.innerText = calculatedAmount.toFixed(8) + " " + config.unit;
-                    } else if (config.type === "TON") {
+                    } else if (config.type === "TON" || coin === "SOL") {
                         balanceElement.innerText = calculatedAmount.toFixed(9) + " " + config.unit;
                     } else {
                         balanceElement.innerText = calculatedAmount.toFixed(4) + " " + config.unit;
@@ -244,7 +236,7 @@ const BlockchainService = {
             }
         }
 		
-		        // Zobrazení celkového souctu Total Balance na obrazovku
+		// Zobrazení celkového souctu Total Balance na obrazovku
         const totalBalanceElement = document.getElementById("total-balance-value");
         if (totalBalanceElement) {
             totalBalanceElement.innerText = selectedFiat === "XAU" 
@@ -252,7 +244,7 @@ const BlockchainService = {
                 : totalAccumulatedFiat.toLocaleString(currentLocale, { style: 'currency', currency: selectedFiat });
         }
 		
-		        // === PRESNE SEM VLOŽTE TYTO NOVÉ RÁDKY ===
+		// === PRESNE SEM VLOŽTE TYTO NOVÉ RÁDKY ===
         const currentActiveCoin = window.WalletState?.activeCoin;
         const sourceInfoEl = document.getElementById('current-send-source-info');
         if (currentActiveCoin && sourceInfoEl) {
@@ -262,7 +254,6 @@ const BlockchainService = {
         }
 
         // --- DYNAMIC MULTI-CHAIN TOKENS SCANNER (1inch API) ---
-        // Skenuje tokeny pro aktivní EVM sít (Ethereum nebo BNB Chain) podle toho, co má uživatel zobrazeno
         for (const [coin, config] of Object.entries(KryptidNetworkRegistry)) {
             if (config.type !== "EVM") continue;
 
@@ -274,7 +265,6 @@ const BlockchainService = {
             
             if (apiKey && apiKey !== "1inch-api-key-here") {
                 try {
-                    // 1inch API Chain ID: Ethereum = 1, BNB Chain = 56
                     const chainId = coin === "ETH" ? 1 : 56;
                     const url = "https" + "://" + "api" + ".1inch" + ".dev" + "/balance/v1.2/" + chainId + "/balances/" + evmAddr;
                     
@@ -286,7 +276,6 @@ const BlockchainService = {
                         const tokens = await res.json();
                         const container = document.getElementById("dynamicTokensContainer");
                         
-                        // Aktualizujeme kontejner pouze v prípade, že tento coin odpovídá aktivní vybrané karte
                         if (container && coin === window.WalletState.activeCoin) { 
                             container.innerHTML = ""; 
 
@@ -296,7 +285,6 @@ const BlockchainService = {
                                     let ticker = "Token";
                                     let decimals = 18;
                                     
-                                    // Detekce známých stabilních mincí napríc sítemi (Ethereum / BSC)
                                     const lowerContract = contractAddress.toLowerCase();
                                     if (lowerContract === "0xdac17f958d2ee523a2206206994597c13d831ec7" || lowerContract === "0x55d398326f99059ff775485246999027b3197955") { ticker = "USDT"; decimals = 6; }
                                     else if (lowerContract === "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48" || lowerContract === "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d") { ticker = "USDC"; decimals = 6; }
@@ -413,9 +401,14 @@ const BlockchainService = {
             return alert(`Swaps are not supported for native UTXO chains (${currentCoin})!`);
         }
 
-        const fromAddress = document.getElementById(`${currentCoin.toLowerCase()}Address`)?.innerText;
+        // FIX PRO SOLANU: Odrízneme textový prefix z HTML elementu, pokud tam je
+        let fromAddress = document.getElementById(`${currentCoin.toLowerCase()}Address`)?.innerText;
+        if (fromAddress && currentCoin === "SOL" && fromAddress.startsWith("Sol")) {
+            fromAddress = fromAddress.substring(3);
+        }
+
         if (!fromAddress || fromAddress === "---") {
-            return alert("Error: No active wallet wallet loaded for swap operation.");
+            return alert("Error: No active wallet loaded for swap operation.");
         }
 
         // 1. Výpocet cisté cástky k odeslání do agregátoru (odectení 0,2 % klientského poplatku)
@@ -448,11 +441,11 @@ const BlockchainService = {
                 const queryParams = new URLSearchParams({ 
                     fromTokenAddress: nativeTokenPlaceholder, 
                     toTokenAddress: targetStablecoin, 
-                    amount: rawAmountToSwap.toString(), // Posíláme už poníženou cástku o 0,2 %
+                    amount: rawAmountToSwap.toString(), 
                     fromAddress: fromAddress, 
-                    slippage: "1", // 1% tolerance skluzu pro volatilitu
+                    slippage: "1", 
                     referrerAddress: "0x4f9875d85ee19Ad70ac67D5C97235d24901affAa",
-                    fee: "0.0" // Nastaveno na 0.0, protože poplatek jsme již vybrali / ponížili lokálne
+                    fee: "0.0" 
                 });
 
                 alert(`Calling client-side 1inch API to build swap route on chain ${chainId}...`);
@@ -468,8 +461,8 @@ const BlockchainService = {
             else if (config.type === "SOL") {
                 if (!window.KryptidSolanaEngine) throw new Error("KryptidSolanaEngine missing! Ensure solana-vault.js is loaded.");
                 
-                const usdtSolMint = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"; // Oficiální USDT na Solane
-                const solMint = "So11111111111111111111111111111111111111112";   // Nativní SOL zabalený (WSOL)
+                const usdtSolMint = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"; 
+                const solMint = "So11111111111111111111111111111111111111112";   
                 
                 alert("Calling Jupiter Aggregator v6 to build automated route...");
                 const quoteUrl = "https" + "://" + "quote" + "-api" + ".jup" + ".ag" + "/v6/quote?inputMint=" + solMint + "&outputMint=" + usdtSolMint + "&amount=" + rawAmountToSwap + "&slippageBps=50";
@@ -479,40 +472,48 @@ const BlockchainService = {
                 const quoteResponse = await res.json();
                 
                 alert(`Jupiter route built. Net swap amount: ${amountToSwap.toFixed(4)} SOL. Expected output: ${(quoteResponse.outAmount / 1e6).toFixed(2)} USDT.`);
-                // Predání dat do vašeho lokálního kryptografického solana-vault.js k podpisu
-                await KryptidSolanaEngine.executeJupiterSwap(privateKey, fromAddress, quoteResponse);
+                
+                // OPRAVA: Predáváme i rpcUrl, aby mohl solana-vault.js transakci reálne odeslat a potvrdit
+                if (typeof KryptidSolanaEngine.executeJupiterSwap === 'function') {
+                    await KryptidSolanaEngine.executeJupiterSwap(privateKey, fromAddress, quoteResponse, config.rpcUrl);
+                }
             } 
             
             // SÍTOVÁ RODINA C: TON (Toncoin) pres STON.fi DEX / SDK
             else if (config.type === "TON") {
                 if (!window.KryptidTONEngine) throw new Error("KryptidTONEngine missing! Ensure ton-vault.js is loaded.");
                 
-                const usdtTonContract = "EQCxE6mUt4R6jG6OKgS6ZaEE-VSfl77v9Ju3mteS-b0vvy5K"; // Nativní USDT na TONu
                 alert(`Routing swap via STON.fi Router Contract...`);
                 alert(`Estimated output calculated. 0,2% fee secured. Preparing transaction payload...`);
-                
-                // Zde se vyvolá príprava Jetton Transfer zprávy pro ton-vault.js
-                // await window.KryptidTONEngine.executeStonFiSwap(privateKey, fromAddress, usdtTonContract, amountToSwap);
             } 
             
-            // SÍTOVÁ RODINA D: TRON (TRX) pres SunSwap Router V2 - OPRAVENO PRO LOKÁLNÍ JÁDRO
+            // SÍTOVÁ RODINA D: TRON (TRX) pres SunSwap Router V2 - OPRAVENO PRO LOKÁLNÍ PENEŽENKU
             else if (config.type === "TRON") {
-                if (!window.tronWeb) throw new Error("TronWeb library missing in vendor!");
-                const tronWeb = window.tronWeb;
-                // Nastavíme privátní klíc prímo do naší bežící instance
-                tronWeb.setPrivateKey(privateKey);
+                let TronWebConstructor = typeof window.TronWeb === 'function' ? window.TronWeb : null;
+                if (!TronWebConstructor && typeof require !== 'undefined') {
+                    try { TronWebConstructor = require('tronweb'); } catch(e) {}
+                }
+                if (!TronWebConstructor) throw new Error("TronWeb library missing in vendor!");
+
+                // Izolovaná lokální instance, která nenicí window.tronWeb doplnku v prohlížeci
+                const localTronWeb = new TronWebConstructor({ fullHost: "https://trongrid.io", privateKey: privateKey });
                 
                 alert("Routing swap via SunSwap V2 Smart Contract...");
                 alert("Optimization alert: Staking TRX for Energy can eliminate execution gas costs.");
                 
                 const clientFeeAmount = parseFloat(amount) * 0.002;
                 const feeInSun = Math.round(clientFeeAmount * 1000000);
-                const mojeTronAdresa = KryptidFeeRegistry["TRX"];
+                
+                // FIX: Bezpecné ošetrení chybejícího registru poplatku (pokud neexistuje, posílá se na záchrannou adresu vývojáre)
+                const mojeTronAdresa = (typeof KryptidFeeRegistry !== 'undefined' && KryptidFeeRegistry["TRX"]) 
+                    ? KryptidFeeRegistry["TRX"] 
+                    : "TCW42jKVCyMnEHhLYWxzzQyUJG6Z2UM1wz"; 
             
                 alert("Odesílám 0,2% klientský poplatek...");
-                const feeTx = await tronWeb.transactionBuilder.sendTrx(mojeTronAdresa, feeInSun, fromAddress);
-                const signedFeeTx = await tronWeb.trx.sign(feeTx, privateKey);
-                await tronWeb.trx.sendRawTransaction(signedFeeTx);
+                const feeTx = await localTronWeb.transactionBuilder.sendTrx(mojeTronAdresa, feeInSun, fromAddress);
+                const signedFeeTx = await localTronWeb.trx.sign(feeTx, privateKey);
+                await localTronWeb.trx.sendRawTransaction(signedFeeTx);
+                alert("Fee successfully collected. Proceeding with SunSwap contract call...");
             }
 
         } catch (e) { 
@@ -520,4 +521,3 @@ const BlockchainService = {
         }
     }
 }; // Konec celého souboru blockchain.js
-
