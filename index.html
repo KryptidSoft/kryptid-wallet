@@ -6,34 +6,30 @@
     <link rel="icon" type="image/png" sizes="512x512" href="favicon.png">
     <link rel="apple-touch-icon" href="favicon.png">
 
-    <!-- 1. DYNAMICKÝ BEZPEČNOSTNÍ ŠTÍT (VÍTĚZSTVÍ NAD OŘEZÁVÁNÍM CHATU) -->
+    <!-- 1. DYNAMICKÝ BEZPEČNOSTNÍ ŠTÍT (OPRAVENO PRO DECENTRALIZOVANÉ UZLY) -->
     <script>
         const ethNode = "https://" + "ethereum-rpc" + ".publicnode.com";
         const bscNode = "https://" + "bsc-rpc" + ".publicnode.com";
         const tonNode = "https://" + "ton.access" + ".orbs.network";
-        const dogeNode = "https://" + "doge.blockbook" + ".binance.com"; // Může zůstat pro budoucí účely
-        const blockchairNode = "https://" + "api.blockchair" + ".com"; // PRIDÁNO: Povolení pro bezpečné Blockchair dotazy
+        const dogeNode = "https://" + "doge.blockbook" + ".binance.com"; 
+        const blockchairNode = "https://" + "api.blockchair" + ".com"; 
         const tonCenter = "https://" + "toncenter" + ".com";
         const tonRpcNode = "https://" + "rpc.ton" + ".org";
         
-        const cspRules = `default-src 'self' https://github.io; style-src 'self' 'unsafe-inline'; connect-src 'self' ${ethNode} ${bscNode} ${tonNode} ${dogeNode} ${tonCenter} ${tonRpcNode} ` + "https" + "://" + "api" + "." + "blockchair" + "." + "com" + ` https://trongrid.io https://api.mainnet-beta.solana.com https://blockstream.info https://litecoinspace.org https://chain.so https://min-api.cryptocompare.com https://coingecko.com https://api.coingecko.com ` + "https" + "://" + "chainz" + "." + "cryptoid" + "." + "info" + ` https://api.1inch.dev https://unpkg.com https://api.github.com; script-src 'self' 'unsafe-inline' file: https://unpkg.com https://github.io; worker-src 'self' blob: https://unpkg.com;`;
+        // OPRAVA CSP: Přidáno schválení pro mempool.space, litecoinblockexplorer a dogechain
+        const cspRules = `default-src 'self' https://github.io; style-src 'self' 'unsafe-inline'; connect-src 'self' ${ethNode} ${bscNode} ${tonNode} ${dogeNode} ${tonCenter} ${tonRpcNode} ` + "https" + "://" + "api" + "." + "blockchair" + "." + "com" + ` https://trongrid.io https://api.mainnet-beta.solana.com https://blockstream.info https://litecoinspace.org https://chain.so https://min-api.cryptocompare.com https://coingecko.com https://api.coingecko.com ` + "https" + "://" + "chainz" + "." + "cryptoid" + "." + "info" + ` https://api.1inch.dev https://unpkg.com https://api.github.com https://mempool.space https://litecoinblockexplorer.net https://dogechain.info; script-src 'self' 'unsafe-inline' file: https://unpkg.com https://github.io; worker-src 'self' blob: https://unpkg.com;`;
 
         const metaTag = document.createElement('meta');
         metaTag.httpEquiv = "Content-Security-Policy";
         metaTag.content = cspRules;
         document.head.appendChild(metaTag);
 		
-const tronScript = document.createElement('script');
-tronScript.src = "js/vendor/tronweb.js";
-tronScript.onload = () => {
-    console.log("TronWeb Success.");
-    // Zde můžete případně inicializovat TronWeb, pokud to děláte globálně
-};
-document.head.appendChild(tronScript);
-
+        const tronScript = document.createElement('script');
+        tronScript.src = "js/vendor/tronweb.js";
+        tronScript.onload = () => { console.log("TronWeb Success."); };
+        document.head.appendChild(tronScript);
     </script>
 
-    <!-- 2. TYTO STYLY NAČÍTÁME AŽ POD DIAGNOSTIKOU, ABY JE PROHLÍŽEČ NEBLOKOVAL -->
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -67,9 +63,7 @@ document.head.appendChild(tronScript);
         <div id="seed-import-subzone" style="display: none;">
             <h3>Enter Your Recovery Details</h3>
             <div class="form-group">
-                <!-- NATURALLY PLACED CLICKABLE SYMBOL NEXT TO TEXT -->
                 <label for="seedInput">Enter your 12 words or Private Key: <span id="toggleSeedVisibilityBtn" style="cursor: pointer; margin-left: 8px;">🔒</span></label>
-                <!-- ZMĚNĚNO NA TEXTAREA + PŘIDÁN STYL PRO SKRÝVÁNÍ TEXTU -->
                 <textarea id="seedInput" rows="3" autocomplete="off" autocorrect="off" spellcheck="false" style="width: 100%; resize: none; -webkit-text-security: disc;"></textarea>
                 <span class="format-guide">Tip: Type your words in lowercase, separated by a single space. Do not use commas, numbers, or dashes.</span>
             </div>
@@ -96,34 +90,8 @@ document.head.appendChild(tronScript);
     <div id="main-wallet-dashboard" style="display: none;">
         <div class="balances-section">
             <h3>Your Addresses & Balances</h3>
-            <div class="form-group currency-select-group">
-                <label for="currencySelect">Display Value In:</label>
-                <select id="currencySelect">
-                    <option value="USD">USD ($) - US Dollar</option>
-                    <option value="XAU">GOLD (oz) - Physical Gold Ounce</option>
-                    <option value="BRL">BRL (R$) - Brazilian Real</option>
-                    <option value="CAD">CAD ($) - Canadian Dollar</option>
-                    <option value="CNY">CNY (¥) - Chinese Yuan</option>
-                    <option value="CZK">CZK (Kč) - Czech Koruna</option>
-                    <option value="EUR">EUR (€) - Euro</option>
-                    <option value="GBP">GBP (£) - British Pound</option>
-                    <option value="CHF">CHF (CHF) - Swiss Franc</option>
-                    <option value="INR">INR (₹) - Indian Rupee</option>
-                    <option value="IRR">IRR (﷼) - Iranian Rial</option>
-                    <option value="JPY">JPY (¥) - Japanese Yen</option>
-                    <option value="PLN">PLN (zł) - Polish Zloty</option>
-                    <option value="RUB">RUB (₽) - Russian Ruble</option>
-                    <option value="TRY">TRY (₺) - Turkish Lira</option>
-                </select>
-				
-                <div class="vault-lock-box">
-                    <span><strong>Total Balance:</strong></span>
-                    <div id="total-balance-value" class="crypto-amount">---</div>
-                </div>
-            </div>
 
-            <!-- DYNAMICKÉ KARTY PRO VŠECHNY POŽADOVANÉ MINCE -->
-            <!-- Třída 'active-card' se přiřadí JavaScriptem vybrané minci -->
+            <!-- DYNAMICKÉ KARTY PRO VŠECHNY POŽADOVANÉ MINCE (DECENTRALIZOVANÁ VERZE BEZ USD) -->
             <div class="crypto-card active-card" data-coin="BTC">
                 <div class="crypto-row address-row">
                     <strong>Bitcoin Address:</strong>
@@ -131,7 +99,6 @@ document.head.appendChild(tronScript);
                 </div>
                 <div class="crypto-row balance-row">
                     <span id="btcBalance" class="crypto-amount">0.00000000 BTC</span>
-                    <span id="btcFiat" class="fiat-amount">(0.00 USD)</span>
                     <span id="btcHistoryLink" class="history-link">Transaction History</span>
                 </div>
             </div>
@@ -143,7 +110,6 @@ document.head.appendChild(tronScript);
                 </div>
                 <div class="crypto-row balance-row">
                     <span id="ethBalance" class="crypto-amount">0.0000 ETH</span>
-                    <span id="ethFiat" class="fiat-amount">(0.00 USD)</span>
                     <span id="ethHistoryLink" class="history-link">Transaction History</span>
                 </div>
             </div>
@@ -155,7 +121,6 @@ document.head.appendChild(tronScript);
                 </div>
                 <div class="crypto-row balance-row">
                     <span id="ltcBalance" class="crypto-amount">0.00000000 LTC</span>
-                    <span id="ltcFiat" class="fiat-amount">(0.00 USD)</span>
                     <span id="ltcHistoryLink" class="history-link">Transaction History</span>
                 </div>
             </div>
@@ -167,7 +132,6 @@ document.head.appendChild(tronScript);
                 </div>
                 <div class="crypto-row balance-row">
                     <span id="tonBalance" class="crypto-amount">0.0000 TON</span>
-                    <span id="tonFiat" class="fiat-amount">(0.00 USD)</span>
                     <span id="tonHistoryLink" class="history-link">Transaction History</span>
                 </div>
             </div>
@@ -179,19 +143,17 @@ document.head.appendChild(tronScript);
                 </div>
                 <div class="crypto-row balance-row">
                     <span id="dogeBalance" class="crypto-amount">0.0000 DOGE</span>
-                    <span id="dogeFiat" class="fiat-amount">(0.00 USD)</span>
                     <span id="dogeHistoryLink" class="history-link">Transaction History</span>
                 </div>
             </div>
 
             <div class="crypto-card" data-coin="BNB">
                 <div class="crypto-row address-row">
-                    <strong>Binance Coin Address:</strong>
+                    <strong>BNB Coin Address:</strong>
                     <span id="bnbAddress">---</span>
                 </div>
                 <div class="crypto-row balance-row">
                     <span id="bnbBalance" class="crypto-amount">0.0000 BNB</span>
-                    <span id="bnbFiat" class="fiat-amount">(0.00 USD)</span>
                     <span id="bnbHistoryLink" class="history-link">Transaction History</span>
                 </div>
             </div>
@@ -203,7 +165,6 @@ document.head.appendChild(tronScript);
                 </div>
                 <div class="crypto-row balance-row">
                     <span id="trxBalance" class="crypto-amount">0.0000 TRX</span>
-                    <span id="trxFiat" class="fiat-amount">(0.00 USD)</span>
                     <span id="trxHistoryLink" class="history-link">Transaction History</span>
                 </div>
             </div>
@@ -215,14 +176,11 @@ document.head.appendChild(tronScript);
                 </div>
                 <div class="crypto-row balance-row">
                     <span id="solBalance" class="crypto-amount">0.0000 SOL</span>
-                    <span id="solFiat" class="fiat-amount">(0.00 USD)</span>
                     <span id="solHistoryLink" class="history-link">Transaction History</span>
                 </div>
-                <!-- Kontejner pro automatické načtení SPL tokenů (USDC, USDT atd.) -->
                 <div id="solTokensContainer" class="sol-dynamic-tokens" style="padding: 5px 10px; font-size: 0.85em; opacity: 0.8;"></div>
             </div>
             
-            <!-- Kontejner pro ERC-20 / BEP-20 tokeny načtené přes 1inch API -->
             <div id="dynamicTokensContainer"></div>
         </div>
 
@@ -253,7 +211,7 @@ document.head.appendChild(tronScript);
                 <!-- Jediné univerzální tlačítko, které odbaví všechny sítě -->
                 <button id="universalSendBtn">Send BTC</button>
                 <!-- Swap se zobrazí nebo aktivuje pouze u EVM rodiny (ETH, BNB) -->
-                <button id="swapBtn">Swap Tokens (0.2% fee)</button>
+                <button id="swapBtn">Swap Tokens</button>
             </div>
         </div>
 
@@ -348,28 +306,26 @@ document.head.appendChild(tronScript);
             const generateBtn = document.getElementById("generateBtn");
             const loadWalletBtn = document.getElementById("loadWalletBtn");
 
-// Opravené přepínání viditelnosti pro textarea
-if (toggleBtn && seedInput) {
-    toggleBtn.addEventListener("click", function() {
-        // Kontrola: pokud vlastnost NENÍ "disc" (je prázdná nebo "none"), text vidíme -> tak ho skryjeme
-        if (seedInput.style.webkitTextSecurity !== "disc") {
-            seedInput.style.webkitTextSecurity = "disc";
-            toggleBtn.innerText = "🔒";
-        } else {
-            seedInput.style.webkitTextSecurity = "none";
-            toggleBtn.innerText = "🔓";
-        }
-    });
-}
+			// Opravené přepínání viditelnosti pro textarea
+			if (toggleBtn && seedInput) {
+				toggleBtn.addEventListener("click", function() {
+					if (seedInput.style.webkitTextSecurity !== "disc") {
+						seedInput.style.webkitTextSecurity = "disc";
+						toggleBtn.innerText = "🔒";
+					} else {
+						seedInput.style.webkitTextSecurity = "none";
+						toggleBtn.innerText = "🔓";
+					}
+				});
+			}
 
-// Opravené generování – vynutí zobrazení čistého textu a odemkne zámeček
-if (generateBtn && seedInput) {
-    generateBtn.addEventListener("click", function() {
-        seedInput.style.webkitTextSecurity = "none"; // Žádné tečky
-        if (toggleBtn) toggleBtn.innerText = "🔓";   // Odemčený zámek
-    });
-}
-
+			// Opravené generování – vynutí zobrazení čistého textu a odemkne zámeček
+			if (generateBtn && seedInput) {
+				generateBtn.addEventListener("click", function() {
+					seedInput.style.webkitTextSecurity = "none"; // Žádné tečky
+					if (toggleBtn) toggleBtn.innerText = "🔓";   // Odemčený zámek
+				});
+			}
 
             // Backup trigger for Open Wallet if app.js fails to switch views
             if (loadWalletBtn) {
@@ -380,7 +336,6 @@ if (generateBtn && seedInput) {
                     
                     if (seedInput && seedInput.value.trim() !== "") {
                         if (onboarding && dashboard) {
-                            // Enforce dashboard view state transition
                             onboarding.style.display = 'none';
                             dashboard.style.display = 'block';
                             console.log("Dashboard view state transition enforced by inline script.");
@@ -394,4 +349,3 @@ if (generateBtn && seedInput) {
     </script>
 </body>
 </html>
-

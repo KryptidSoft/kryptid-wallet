@@ -1,8 +1,8 @@
-// Globální registr podporovaných kryptomen a jejich sítových specifikací
+// Globální registr podporovaných kryptomen a jejich sítových specifikací (OPRAVENO PRO DECENTRALIZOVANÝ PROVOZ)
 const KryptidNetworkRegistry = {
-    "BTC": { type: "UTXO", explorer: "blockstream.info", apiUrl: "https" + "://" + "api" + "." + "blockchair" + "." + "com" + "/bitcoin" + "/dashboards" + "/address" + "/" + "{address}", decimals: 8, unit: "BTC" },
-    "LTC": { type: "UTXO", explorer: "litecoinspace.org", apiUrl: "https" + "://" + "api" + "." + "blockchair" + "." + "com" + "/litecoin" + "/dashboards" + "/address" + "/" + "{address}", decimals: 8, unit: "LTC" },
-    "DOGE": { type: "UTXO", explorer: "dogechain.info", apiUrl: "https" + "://" + "api" + "." + "blockchair" + "." + "com" + "/dogecoin" + "/dashboards" + "/address" + "/" + "{address}", decimals: 8, unit: "DOGE" },
+    "BTC": { type: "UTXO", explorer: "blockstream.info", apiUrl: "https" + "://" + "mempool" + "." + "space" + "/api/address/" + "{address}", decimals: 8, unit: "BTC" },
+    "LTC": { type: "UTXO", explorer: "litecoinspace.org", apiUrl: "https" + "://" + "litecoinblockexplorer" + "." + "net" + "/api/address/" + "{address}", decimals: 8, unit: "LTC" },
+    "DOGE": { type: "UTXO", explorer: "dogechain.info", apiUrl: "https" + "://" + "dogechain" + "." + "info" + "/api/v1/address/balance/" + "{address}", decimals: 8, unit: "DOGE" },
     "ETH": { type: "EVM", rpcUrl: "https" + "://" + "ethereum-rpc" + ".publicnode.com", decimals: 18, unit: "ETH" },
     "BNB": { type: "EVM", rpcUrl: "https" + "://" + "bsc-rpc" + ".publicnode.com", decimals: 18, unit: "BNB" },
     "TRX": { type: "TRON", rpcUrl: "https" + "://" + "api" + "." + "trongrid" + "." + "io", decimals: 6, unit: "TRX" },
@@ -21,47 +21,8 @@ const KryptidFeeRegistry = {
 
 const BlockchainService = {
     // AUTOMATIC MULTI-FIAT BLOCKCHAIN BALANCE CONVERSION ENGINE
-    async fetchAndDisplayBalances() {
-        const selectedFiat = document.getElementById("currencySelect")?.value || "USD";
-        
-        const localeMap = { 
-            "USD": "en-US", "CZK": "cs-CZ", "EUR": "de-DE", "XAU": "en-US",
-            "GBP": "en-GB", "CHF": "de-CH", "JPY": "ja-JP", "INR": "hi-IN", 
-            "BRL": "pt-BR", "RUB": "ru-RU", "CNY": "zh-CN", "PLN": "pl-PL",
-            "CAD": "en-CA", "TRY": "tr-TR", "IRR": "fa-IR"
-        };
-        const currentLocale = localeMap[selectedFiat] || "en-US";
-		
-		let totalAccumulatedFiat = 0;
-
-        // --- 1. STABILNÍ FETCH TRŽNÍCH CEN (CryptoCompare obchází CORS i 403 blokaci) ---
-        let cryptoPricesInFiat = {};
-        try {
-            const coinsParam = "BTC,ETH,LTC,TON,DOGE,BNB,TRX,SOL";
-			const mainUrl = "https" + "://" + "min-api" + "." + "cryptocompare.com" + "/data/pricemulti?fsyms=" + coinsParam + "&tsyms=" + selectedFiat;
-            
-            const mainRes = await fetch(mainUrl);
-            const mainPrices = await mainRes.json();
-            
-            Object.keys(KryptidNetworkRegistry).forEach(coin => {
-                if (mainPrices[coin] && mainPrices[coin][selectedFiat]) {
-                    cryptoPricesInFiat[coin] = mainPrices[coin][selectedFiat];
-                } else {
-                    cryptoPricesInFiat[coin] = 0;
-                }
-            });
-
-            // Podpora pro prípadné externí tokeny
-            if (window.KryptidTokenRegistry) {
-                for (const token of window.KryptidTokenRegistry) {
-                    cryptoPricesInFiat[token.symbol] = cryptoPricesInFiat[token.symbol] || 0;
-                }
-            }
-        } catch (err) {
-            console.error("Multi-fiat conversion exchange rates fetch failed, using fallback:", err.message);
-            // Nouzový záchranný plán, aby peneženka neukazovala nuly pri výpadku síte
-            cryptoPricesInFiat = { BTC: 64000, ETH: 2600, LTC: 65, TON: 5.2, DOGE: 0.11, BNB: 560, TRX: 0.15, SOL: 155 };
-        }
+        async fetchAndDisplayBalances() {
+			let cryptoPricesInFiat = {};
 
         // --- 2. UNIVERZÁLNÍ SMYCKA PRO ZÍSKÁNÍ ZUSTATKU VŠECH COINU ---
         for (const [coin, config] of Object.entries(KryptidNetworkRegistry)) {
@@ -88,42 +49,44 @@ const BlockchainService = {
                 try {
                     let calculatedAmount = 0;
 
-                    // A: Zpracování pro UTXO radu (Bitcoin, Litecoin, Dogecoin)
+                    // A: Zpracování pro UTXO radu (Bitcoin, Litecoin, Dogecoin) - OPRAVENO BEZ CHYBY 430
                     if (config.type === "UTXO") {
-                        let btcUrl = config.apiUrl.replace("{address}", address);
-                        let isStandardApi = false;
-
-                        if (coin === "BTC" || coin === "LTC") {
-                            btcUrl = btcUrl.replace("/utxo", ""); 
-                            isStandardApi = true;
+                        let finalUrl = "";
+                        if (coin === "BTC") {
+                            finalUrl = "https" + "://" + "mempool" + "." + "space" + "/api/address/" + address;
+                        } else if (coin === "LTC") {
+                            finalUrl = "https" + "://" + "litecoinblockexplorer" + "." + "net" + "/api/address/" + address;
+                        } else if (coin === "DOGE") {
+                            finalUrl = "https" + "://" + "dogechain" + "." + "info" + "/api/v1/address/balance/" + address;
+                        } else {
+                            finalUrl = config.apiUrl.replace("{address}", address);
                         }
                         
                         try {
-                            // OPRAVA CHYBY 430: cache-busting ochrana obchází rate-limity Blockchairu
-                            const res = await fetch(btcUrl + "?cache=" + Math.random(), { credentials: 'omit' });
+                            const res = await fetch(finalUrl, { method: 'GET' });
                             
                             if (!res.ok) {
                                 calculatedAmount = 0;
                             } else {
                                 const data = await res.json();
                                 
-                                // Výpocet pro upravené stabilní API Bitcoinu a Litecoinu
-                                if (isStandardApi && data && data.chain_stats) {
+                                // Výpocet pro upravené stabilní API Bitcoinu (mempool.space)
+                                if (coin === "BTC" && data && data.chain_stats) {
                                     const funded = data.chain_stats.funded_txo_sum || 0;
-                                    const spent = data.chain_stats.spent_txo_sum || 0;
+                                    const spent = data.chain_stats.funded_txo_spent || 0;
                                     calculatedAmount = (funded - spent) / Math.pow(10, config.decimals);
                                 } 
-                                // Puvodní fallbacky pro ostatní síte (Dogecoin apod.)
-                                else if (Array.isArray(data)) {
-                                    let totalSatoshis = 0;
-                                    data.forEach(utxo => { totalSatoshis += (utxo.value || 0); });
-                                    calculatedAmount = totalSatoshis / Math.pow(10, config.decimals);
-                                } else if (data && data.data && data.data[address]) {
-                                    calculatedAmount = (data.data[address].address.balance || 0) / Math.pow(10, config.decimals);
-                                } else if (data && typeof data.balance !== 'undefined') {
+                                // Výpocet pro upravené API Litecoinu a Dogecoinu
+                                else if ((coin === "LTC" || coin === "DOGE") && data && typeof data.balance !== 'undefined') {
                                     calculatedAmount = parseFloat(data.balance);
                                 } else {
-                                    calculatedAmount = parseFloat(data) || 0;
+                                    if (Array.isArray(data)) {
+                                        let totalSatoshis = 0;
+                                        data.forEach(utxo => { totalSatoshis += (utxo.value || 0); });
+                                        calculatedAmount = totalSatoshis / Math.pow(10, config.decimals);
+                                    } else {
+                                        calculatedAmount = parseFloat(data) || 0;
+                                    }
                                 }
                             }
                         } catch (fetchError) {
@@ -132,10 +95,9 @@ const BlockchainService = {
                         }
                     }
                     
-                    // C: Zpracování pro TRON (TRX) - VYCIŠTENO PRO NW.JS MULTI-ENVIRONMENT
+                    // B: Zpracování pro TRON (TRX) - SOUCÁSTÍ JE NEZÁVISLÝ SKENER PRO USDT
                     else if (config.type === "TRON") {
                         let balanceSun = 0;
-                        
                         let TronWebConstructor = typeof window.TronWeb === 'function' ? window.TronWeb : null;
                         
                         if (!TronWebConstructor && typeof require !== 'undefined') {
@@ -147,8 +109,29 @@ const BlockchainService = {
                         
                         if (activeTronWeb && activeTronWeb.trx && typeof activeTronWeb.trx.getBalance === 'function') {
                             try {
+                                // 1. VÁŠ PUVODNÍ KÓD NA ZUSTATEK TRX (ZUSTÁVÁ NETKNUTÝ)
                                 balanceSun = await activeTronWeb.trx.getBalance(address);
                                 calculatedAmount = parseFloat(balanceSun) / Math.pow(10, config.decimals);
+
+                                // 2. NEZÁVISLÝ SKENER PRO USDT (TRC-20) BEZ ROZVRTLÁNÍ VAŠÍ LOGIKY
+                                const container = document.getElementById("dynamicTokensContainer");
+                                const res = await fetch("https" + "://" + "api" + "." + "trongrid" + "." + "io" + "/v1/accounts/" + address);
+                                if (res.ok && container) {
+                                    const json = await res.json();
+                                    const trc20Balances = json?.data?.[0]?.trc20;
+                                    
+                                    if (Array.isArray(trc20Balances)) {
+                                        trc20Balances.forEach(tokenMap => {
+                                            if (tokenMap["TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"]) {
+                                                const rawUsdt = parseFloat(tokenMap["TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"]);
+                                                const usdtAmount = rawUsdt / 1000000;
+                                                if (usdtAmount > 0.001) {
+                                                    container.innerHTML += `<p><strong>USDT (TRX):</strong> <span>${usdtAmount.toFixed(4)} USDT</span></p>`;
+                                                }
+                                            }
+                                        });
+                                    }
+                                }
                             } catch (tronApiError) {
                                 calculatedAmount = 0;
                             }
@@ -157,20 +140,25 @@ const BlockchainService = {
                         }
                     }
 
-                    // [OPRAVA/INTEGRACE]: Zpracování pro SOLANU (SOL) - Zprovoznuje chybející sítový dotaz
+                    // C: Zpracování pro SOLANU (SOL) - VCETNE AUTOMATICKÉHO SKENERU SPL TOKENU
                     else if (coin === "SOL" && window.KryptidSolanaEngine) {
                         try {
                             calculatedAmount = await KryptidSolanaEngine.getBalance(address);
+                            const solContainer = document.getElementById("solTokensContainer");
+                            if (solContainer && typeof KryptidSolanaEngine.getSPLTokens === 'function') {
+                                solContainer.innerHTML = "";
+                                const splTokens = await KryptidSolanaEngine.getSPLTokens(address, config.rpcUrl);
+                                splTokens.forEach(t => { if (t.amount > 0) solContainer.innerHTML += `<div><strong>${t.symbol}:</strong> ${t.amount.toFixed(4)}</div>`; });
+                            }
                         } catch (solErr) {
                             calculatedAmount = 0;
                         }
                     }
                     
-                    // D: Zpracování pro TON (Toncoin) - ODOLNÉ PROTI HEX/LOWERCASE DEFORMACI
+                    // D: Zpracování pro TON (Toncoin) - VCETNE AUTOMATICKÉHO SKENERU JETTONU
                     else if (config.type === "TON") {
                         try {
                             let validTonAddress = address;
-
                             if (window.TonWeb && window.TonWeb.utils && window.TonWeb.utils.Address) {
                                 try {
                                     const tonAddressInstance = new window.TonWeb.utils.Address(address);
@@ -183,24 +171,30 @@ const BlockchainService = {
                             const tonApiUrl = "https" + "://" + "toncenter" + "." + "com" + "/api" + "/v2" + "/getAddressInformation?address=" + validTonAddress;
                             const res = await fetch(tonApiUrl, { credentials: 'omit' });
                             
-                            if (!res.ok) {
-                                throw new Error("HTTP status " + res.status);
-                            }
-                            
-                            const data = await res.json();
-                            
-                            if (data && data.ok && data.result && typeof data.result.balance !== 'undefined') {
-                                const balanceNano = data.result.balance.toString();
-                                calculatedAmount = parseFloat(balanceNano) / Math.pow(10, config.decimals);
-                            } else {
-                                calculatedAmount = 0;
+                            if (res.ok) {
+                                const data = await res.json();
+                                if (data && data.ok && data.result && typeof data.result.balance !== 'undefined') {
+                                    const balanceNano = data.result.balance.toString();
+                                    calculatedAmount = parseFloat(balanceNano) / Math.pow(10, config.decimals);
+                                } else {
+                                    calculatedAmount = 0;
+                                }
+
+                                // AUTOMATICKÝ SKENER TON JETTONU
+                                const container = document.getElementById("dynamicTokensContainer");
+                                const jettonUrl = "https" + "://" + "toncenter" + "." + "com" + "/api" + "/v2" + "/getJettonWallets?address=" + validTonAddress;
+                                const jRes = await fetch(jettonUrl);
+                                if (jRes.ok && container) {
+                                    const jData = await jRes.json();
+                                    if (jData?.result) { jData.result.forEach(j => { if (parseFloat(j.balance) > 0) container.innerHTML += `<p><strong>Jetton (TON):</strong> ${parseFloat(j.balance) / 1e9} Token</p>`; }); }
+                                }
                             }
                         } catch (tonError) {
                             calculatedAmount = 0;
                         }
                     }
 
-                    // Vykreslení kryptomenového zustatku na kartu
+                    // Vykreslení cistého kryptomenového zustatku na kartu
                     if (config.type === "UTXO") {
                         balanceElement.innerText = calculatedAmount.toFixed(8) + " " + config.unit;
                     } else if (config.type === "TON" || coin === "SOL") {
@@ -209,39 +203,25 @@ const BlockchainService = {
                         balanceElement.innerText = calculatedAmount.toFixed(4) + " " + config.unit;
                     }
                     
-                    // Výpocet fiat hodnoty z nactené ceny
-                    const amountInFiat = calculatedAmount * (cryptoPricesInFiat[coin] || 0);
-					
-					totalAccumulatedFiat += amountInFiat;
-                    
-                    if (selectedFiat === "XAU") {
-                        fiatElement.innerText = `(${amountInFiat.toFixed(4)} oz GOLD)`;
-                    } else {
-                        fiatElement.innerText = `(${amountInFiat.toLocaleString(currentLocale, { style: 'currency', currency: selectedFiat })})`;
-                    }
+                    // TOTÁLNÍ CISTKA FIATU: Vynulovaná dolarová polícka pod kartou se úplne vymažou
+                    fiatElement.innerText = "";
 
                 } catch (e) {
                     console.error(`${coin} balance fetch failed:`, e.message);
-                    balanceElement.innerText = `Error loading ${coin}`;
-                    fiatElement.innerText = "(Error)";
+                    balanceElement.innerText = `Error`;
+                    fiatElement.innerText = "";
                 }
             } else {
                 // Výchozí prázdný stav, pokud peneženka ješte není nactená
                 balanceElement.innerText = (coin === "BTC" || coin === "LTC") ? `0.00000000 ${config.unit}` : (coin === "SOL" || coin === "TON" ? `0.000000000 ${config.unit}` : `0.0000 ${config.unit}`);
-                if (selectedFiat === "XAU") {
-                    fiatElement.innerText = "(0.0000 oz GOLD)";
-                } else {
-                    fiatElement.innerText = `(${(0).toLocaleString(currentLocale, { style: 'currency', currency: selectedFiat })})`;
-                }
+                fiatElement.innerText = "";
             }
         }
 		
-		// Zobrazení celkového souctu Total Balance na obrazovku
+        // Zobrazení stavu na obrazovku místo nefunkcního fiat souctu
         const totalBalanceElement = document.getElementById("total-balance-value");
         if (totalBalanceElement) {
-            totalBalanceElement.innerText = selectedFiat === "XAU" 
-                ? `${totalAccumulatedFiat.toFixed(4)} oz GOLD` 
-                : totalAccumulatedFiat.toLocaleString(currentLocale, { style: 'currency', currency: selectedFiat });
+            totalBalanceElement.innerText = "Aktivní";
         }
 		
 		// === PRESNE SEM VLOŽTE TYTO NOVÉ RÁDKY ===

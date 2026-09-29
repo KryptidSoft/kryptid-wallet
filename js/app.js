@@ -374,18 +374,20 @@
         BlockchainService.executeSwap(amount, privateKey);
     });
 
-    let isFetching = false;
-    document.getElementById('currencySelect').addEventListener('change', async () => {
-        if (isFetching) return;
-        try {
-            isFetching = true;
-            await BlockchainService.fetchAndDisplayBalances();
-        } catch (e) {
-            console.error(e.message);
-        } finally {
-            isFetching = false;
-        }
-    });
+let isFetching = false;
+
+// ČISTÝ DECENTRALIZOVANÝ ENGINE: Automatická aktualizace zůstků každých 60 sekund
+setInterval(async () => {
+    if (isFetching) return;
+    try {
+        isFetching = true;
+        await BlockchainService.fetchAndDisplayBalances();
+    } catch (e) {
+        console.error("Automatická synchronizace selhala:", e.message);
+    } finally {
+        isFetching = false;
+    }
+}, 60000);
 
 // AUTOMATICKÝ GENERÁTOR TEXTOVÝCH TLAČÍTEK [copy] PRO VŠECHNY ADRESY
     function injectCopyButtons() {
